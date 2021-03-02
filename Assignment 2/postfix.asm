@@ -25,6 +25,7 @@ main:
     li $s5, '9'
     li $s6, '\n'
     li $s7, ' '
+    li $t0,0 # store stack size
 
     loop:
         lb $t1, 0($s0)       
@@ -50,11 +51,12 @@ main:
         j loop
         
     addBlock:
+        blt $t0,2,errorInput
         lw $t2, ($sp)
-        addu $sp, $sp, 4
+        add $sp, $sp, 4
 
         lw $t3, ($sp)
-        addu $sp, $sp, 4
+        add $sp, $sp, 4
  
         add $t4,$t2,$t3
 
@@ -67,11 +69,12 @@ main:
         j loop
 
     mulBlock:
+        blt $t0,2,errorInput
         lw $t2, ($sp)
-        addu $sp, $sp, 4
+        add $sp, $sp, 4
 
         lw $t3, ($sp)
-        addu $sp, $sp, 4
+        add $sp, $sp, 4
  
         mul $t4,$t2,$t3
 
@@ -84,13 +87,14 @@ main:
         j loop
 
     subBlock:
+        blt $t0,2,errorInput
         lw $t2, ($sp)
-        addu $sp, $sp, 4
+        add $sp, $sp, 4
 
         lw $t3, ($sp)
-        addu $sp, $sp, 4
+        add $sp, $sp, 4
  
-        sub $t4,$t2,$t3
+        sub $t4,$t3,$t2
 
         subu $sp, $sp, 4
         sw $t4, ($sp)
@@ -101,6 +105,7 @@ main:
         j loop
 
     digitBlock:
+        add $t0,$t0,1
         subu $sp, $sp, 4
         sub $t1,$t1,48
         sw $t1, ($sp)
@@ -111,6 +116,8 @@ main:
         j loop
 
     end:
+        bgt $t0,1, errorInput
+
         lw $t5,($sp)
         li $v0,1
         la $a0,($t5)
