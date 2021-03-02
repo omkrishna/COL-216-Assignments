@@ -12,7 +12,7 @@ main:
 
     li $v0,8
     la $a0,str
-    li $a1,52
+    li $a1, 256
     syscall
 
     la $s0, str     #s0 will hold string that will be iterated through
@@ -56,7 +56,9 @@ main:
 
         lw $t3, ($sp)
         add $sp, $sp, 4
- 
+
+
+        add $t0,$t0,-2
         add $t4,$t2,$t3
 
         subu $sp, $sp, 4
@@ -75,6 +77,7 @@ main:
         lw $t3, ($sp)
         add $sp, $sp, 4
  
+        add $t0,$t0,-2
         mul $t4,$t2,$t3
 
         subu $sp, $sp, 4
@@ -93,6 +96,7 @@ main:
         lw $t3, ($sp)
         add $sp, $sp, 4
  
+        add $t0,$t0,-2
         sub $t4,$t3,$t2
 
         subu $sp, $sp, 4
