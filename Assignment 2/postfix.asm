@@ -63,6 +63,7 @@ main:
 
         subu $sp, $sp, 4
         sw $t4, ($sp)
+        add $t0,$t0,1
 
         #li $v0,4
         #la $a0, add_str
@@ -82,6 +83,7 @@ main:
 
         subu $sp, $sp, 4
         sw $t4, ($sp)
+        add $t0,$t0,1
 
         #li $v0,4
         #la $a0, add_str
@@ -101,6 +103,7 @@ main:
 
         subu $sp, $sp, 4
         sw $t4, ($sp)
+        add $t0,$t0,1
 
         #li $v0,4
         #la $a0, add_str
