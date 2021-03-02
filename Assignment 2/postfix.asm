@@ -1,7 +1,19 @@
+# Assignment 2 - COL216, Semester 2 2020-21
+# MIPS Assembly Program for evaluating a postfix expression entered as a string
+# The program uses 32 bit registers for multiplication and might behave incorrectly for extremely large numbers (overflow)
+
+# Authors : Harshita (2019CS10357) & Om Krishna (2019CS10272)
+
+# The logic for the program uses the STACK data structure
+# If a digit is read, then it is pushed into the stack
+# If an operator (+,-,*) is read, then two numbers are popped from the stack, evaluated using the expression, and pushed back
+# If the expression is valid, at the end of operations, only 1 element remains in stack -> the value of the postfix expression
+
+
 .data
     prompt: .asciiz "Enter the postfix expression : \n"
     err_str: .asciiz "Error Input"
-    str: .space 256
+    str: .space 256 # We can read an expression of size 256 bytes 
 
 .text
 
@@ -10,7 +22,8 @@ main:
     la $a0,prompt
     syscall
 
-    li $v0,8
+    # Reading a string from console and storing it in str
+    li $v0,8 
     la $a0,str
     li $a1, 256
     syscall
@@ -24,11 +37,11 @@ main:
     li $s5, '9'
     li $s6, '\n'
     li $s7, ' '
-    li $t0,0 # store stack size
+    li $t0,0        #t0 stores stack size
 
     loop:
-        lb $t1, 0($s0)       
-        beq $t1, $zero, end
+        lb $t1, 0($s0)       # read the first character of s0
+        beq $t1, $zero, end  # if a zero character is read, then we've read the complete string and we move to the end
         add $s0,1
 
         beq $t1,$s1,addBlock
@@ -43,11 +56,6 @@ main:
 
         j digitBlock
 
-        #li $v0,11
-        #la $a0,0($t1)
-        #syscall
-
-        j loop
         
     addBlock:
         blt $t0,2,errorInput
@@ -65,9 +73,6 @@ main:
         sw $t4, ($sp)
         add $t0,$t0,1
 
-        #li $v0,4
-        #la $a0, add_str
-        #syscall
         j loop
 
     mulBlock:
@@ -85,9 +90,6 @@ main:
         sw $t4, ($sp)
         add $t0,$t0,1
 
-        #li $v0,4
-        #la $a0, add_str
-        #syscall
         j loop
 
     subBlock:
@@ -105,9 +107,6 @@ main:
         sw $t4, ($sp)
         add $t0,$t0,1
 
-        #li $v0,4
-        #la $a0, add_str
-        #syscall
         j loop
 
     digitBlock:
@@ -116,9 +115,6 @@ main:
         sub $t1,$t1,48
         sw $t1, ($sp)
 
-        #li $v0,4
-        #la $a0, digit_str
-        #syscall
         j loop
 
     end:
