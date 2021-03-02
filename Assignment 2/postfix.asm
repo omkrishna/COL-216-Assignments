@@ -1,6 +1,5 @@
 .data
     prompt: .asciiz "Enter the postfix expression : \n"
-    newLine: .asciiz "\n"
     err_str: .asciiz "Error Input"
     str: .space 256
 
