@@ -8,6 +8,12 @@ using namespace std;
 
 int RegisterFile[32];
 int MainMemory[1048576];
+
+int lineC = 0;
+
+string AssemblyLines[1000];
+map<string, int> blocks;
+
 map<string, int> Memory;
 
 int getRegister(string s)
@@ -109,14 +115,217 @@ void printRegisterFile()
     }
 }
 
+void executer(string line, int lineN)
+{
+    istringstream l(line);
+    string f_word, word_1, word_2, word_3;
+    l >> f_word;
+
+    bool text = false, data = false;
+
+    if (f_word == "#")
+        executer(AssemblyLines[lineN + 1], lineN + 1);
+
+    else if (f_word == ".text")
+    {
+        text = true;
+        data = false;
+        cout << "Coding block" << endl;
+    }
+
+    else if (f_word == ".data")
+    {
+        data = true;
+        text = false;
+    }
+
+    else if (f_word == "main:")
+    {
+        cout << "main func starts here" << endl;
+    }
+
+    else if (f_word == "add")
+    {
+        cout << "add instruction read" << endl;
+        l >> word_1;
+        l >> word_2;
+        l >> word_3;
+        if (word_1.at(word_1.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_2.at(word_2.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_3.at(word_3.length() - 1) == ',')
+        {
+            cout << "Err : too many , on line " << lineN << endl;
+            return;
+        }
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        word_2 = word_2.substr(0, word_2.length() - 1);
+        RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + RegisterFile[getRegister(word_3)];
+        printRegisterFile();
+    }
+
+    else if (f_word == "sub")
+    {
+        cout << "sub instruction read" << endl;
+        l >> word_1;
+        l >> word_2;
+        l >> word_3;
+        if (word_1.at(word_1.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_2.at(word_2.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_3.at(word_3.length() - 1) == ',')
+        {
+            cout << "Err : too many , on line " << lineN << endl;
+            return;
+        }
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        word_2 = word_2.substr(0, word_2.length() - 1);
+        RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] - RegisterFile[getRegister(word_3)];
+        printRegisterFile();
+    }
+
+    else if (f_word == "mul")
+    {
+        cout << "mul instruction read" << endl;
+        l >> word_1;
+        l >> word_2;
+        l >> word_3;
+        if (word_1.at(word_1.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_2.at(word_2.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_3.at(word_3.length() - 1) == ',')
+        {
+            cout << "Err : too many , on line " << lineN << endl;
+            return;
+        }
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        word_2 = word_2.substr(0, word_2.length() - 1);
+        RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] * RegisterFile[getRegister(word_3)];
+        printRegisterFile();
+    }
+
+    else if (f_word == "lw")
+    {
+        l >> word_1;
+        l >> word_2;
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        if (word_2.at(0) == '$')
+        {
+            RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(word_2)]];
+        }
+        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+        {
+            //word_2 is of the form 100($t1)
+            int c1 = word_2.find('(');
+            int c2 = word_2.find(')');
+            string offset = word_2.substr(0, c1);
+            string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+            RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
+        }
+        else
+        {
+            cout << "loading from memory (label)";
+        }
+    }
+    else if (f_word == "sw")
+    {
+        l >> word_1;
+        l >> word_2;
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        if (word_2.at(0) == '$')
+        {
+            MainMemory[getRegister(word_2)] = getRegister(word_1);
+        }
+        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+        {
+            //word_2 is of the form 100($t1)
+            int c1 = word_2.find('(');
+            int c2 = word_2.find(')');
+            string offset = word_2.substr(0, c1);
+            string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+            MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
+        }
+        else
+        {
+            cout << "storing into memory (label)";
+        }
+    }
+    else if (f_word == "beq")
+    {
+        cout << "tbd" << endl;
+    }
+    else if (f_word == "bne")
+    {
+        cout << "tbd" << endl;
+    }
+    else if (f_word == "slt")
+    {
+        cout << "tbd" << endl;
+    }
+    else if (f_word == "j")
+    {
+        cout << "tbd" << endl;
+    }
+    else if (f_word == "addi")
+    {
+        cout << "addi instruction read" << endl;
+        l >> word_1;
+        l >> word_2;
+        l >> word_3;
+        if (word_1.at(word_1.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_2.at(word_2.length() - 1) != ',')
+        {
+            cout << "Err : missing , on line " << lineN << endl;
+            return;
+        }
+        if (word_3.at(word_3.length() - 1) == ',')
+        {
+            cout << "Err : too many , on line " << lineN << endl;
+            return;
+        }
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        word_2 = word_2.substr(0, word_2.length() - 1);
+
+        // incomplete - Check if word_3 contains 'x' -> convert hexadecimal to decimal and then add
+        RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + stoi(word_3);
+        printRegisterFile();
+    }
+
+    if (lineN != lineC)
+        executer(AssemblyLines[lineN + 1], lineN + 1);
+}
+
 int main(int argc, char **argv)
 {
 
     fstream f;
     f.open(argv[1], ios::in);
     bool text = false, data = false;
-
-    int lineC = 0;
 
     if (!f)
         cout << "File not found. Check the filename and/or extension" << endl;
@@ -126,210 +335,27 @@ int main(int argc, char **argv)
         while (getline(f, line))
         {
             lineC++;
-            istringstream l(line);
-            string f_word, word_1, word_2, word_3;
-            l >> f_word;
+            AssemblyLines[lineC] = line;
 
-            if (f_word == "#")
-                continue;
+            istringstream iss(line);
+            string word;
+            while (iss >> word)
+            {
+                if (word.find(':') < word.length())
+                {
+                    blocks[word] = lineC;
+                }
+            }
+        }
 
-            else if (f_word == ".text")
-            {
-                text = true;
-                data = false;
-            }
-
-            else if (f_word == ".data")
-            {
-                data = true;
-                text = false;
-            }
-
-            else if (f_word == "main:")
-            {
-                cout << "main func starts here" << endl;
-            }
-
-            else if (f_word == "add")
-            {
-                cout << "add instruction read" << endl;
-                l >> word_1;
-                l >> word_2;
-                l >> word_3;
-                if (word_1.at(word_1.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_2.at(word_2.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_3.at(word_3.length() - 1) == ',')
-                {
-                    cout << "Err : too many , on line " << lineC << endl;
-                    break;
-                }
-                word_1 = word_1.substr(0, word_1.length() - 1);
-                word_2 = word_2.substr(0, word_2.length() - 1);
-                RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + RegisterFile[getRegister(word_3)];
-                printRegisterFile();
-            }
-
-            else if (f_word == "sub")
-            {
-                cout << "sub instruction read" << endl;
-                l >> word_1;
-                l >> word_2;
-                l >> word_3;
-                if (word_1.at(word_1.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_2.at(word_2.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_3.at(word_3.length() - 1) == ',')
-                {
-                    cout << "Err : too many , on line " << lineC << endl;
-                    break;
-                }
-                word_1 = word_1.substr(0, word_1.length() - 1);
-                word_2 = word_2.substr(0, word_2.length() - 1);
-                RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] - RegisterFile[getRegister(word_3)];
-                printRegisterFile();
-            }
-
-            else if (f_word == "mul")
-            {
-                cout << "mul instruction read" << endl;
-                l >> word_1;
-                l >> word_2;
-                l >> word_3;
-                if (word_1.at(word_1.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_2.at(word_2.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_3.at(word_3.length() - 1) == ',')
-                {
-                    cout << "Err : too many , on line " << lineC << endl;
-                    break;
-                }
-                word_1 = word_1.substr(0, word_1.length() - 1);
-                word_2 = word_2.substr(0, word_2.length() - 1);
-                RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] * RegisterFile[getRegister(word_3)];
-                printRegisterFile();
-            }
-
-            else if (f_word == "lw")
-            {
-
-                cout << "load word from memory" << endl;
-                l >> word_1;
-                l >> word_2;
-                word_1 = word_1.substr(0, word_1.length() - 1);
-                if (word_2.at(0) == '$')
-                {
-                    RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(word_2)]];
-                }
-                else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
-                {
-                    //word_2 is of the form 100($t1)
-                    int c1 = word_2.find('(');
-                    int c2 = word_2.find(')');
-                    string offset = word_2.substr(0, c1);
-                    string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
-                    RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
-                }
-                else
-                {
-                    cout << "loading from memory (label)";
-                }
-            }
-            else if (f_word == "sw")
-            {
-                cout << "storing word from memory" << endl;
-                l >> word_1;
-                l >> word_2;
-                word_1 = word_1.substr(0, word_1.length() - 1);
-                if (word_2.at(0) == '$')
-                {
-                    MainMemory[getRegister(word_2)] = getRegister(word_1);
-                }
-                else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
-                {
-                    //word_2 is of the form 100($t1)
-                    int c1 = word_2.find('(');
-                    int c2 = word_2.find(')');
-                    string offset = word_2.substr(0, c1);
-                    string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
-                    MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
-                }
-                else
-                {
-                    cout << "storing into memory (label)";
-                }
-            }
-            else if (f_word == "beq")
-            {
-                cout << "tbd" << endl;
-            }
-            else if (f_word == "bne")
-            {
-                cout << "tbd" << endl;
-            }
-            else if (f_word == "slt")
-            {
-                cout << "tbd" << endl;
-            }
-            else if (f_word == "j")
-            {
-                cout << "tbd" << endl;
-            }
-            else if (f_word == "addi")
-            {
-                cout << "addi instruction read" << endl;
-                l >> word_1;
-                l >> word_2;
-                l >> word_3;
-                if (word_1.at(word_1.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_2.at(word_2.length() - 1) != ',')
-                {
-                    cout << "Err : missing , on line " << lineC << endl;
-                    break;
-                }
-                if (word_3.at(word_3.length() - 1) == ',')
-                {
-                    cout << "Err : too many , on line " << lineC << endl;
-                    break;
-                }
-                word_1 = word_1.substr(0, word_1.length() - 1);
-                word_2 = word_2.substr(0, word_2.length() - 1);
-
-                // incomplete - Check if word_3 contains 'x' -> convert hexadecimal to decimal and then add
-                RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + stoi(word_3);
-                printRegisterFile();
-            }
-
-            //Here we are reading a line word by word
-            /*while (l >> word)
-            {
-                cout << line;
-            }*/
+        int m = blocks["main:"];
+        if (m == 0)
+        {
+            cout << "Err : main not found" << endl;
+        }
+        else
+        {
+            executer(AssemblyLines[m], m);
         }
 
         f.close();
