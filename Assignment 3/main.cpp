@@ -1,10 +1,14 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <iterator>
+#include <map>
 
 using namespace std;
 
 int RegisterFile[32];
+int MainMemory[1048576];
+map<string, int> Memory;
 
 int getRegister(string s)
 {
@@ -76,10 +80,31 @@ int getRegister(string s)
     return -1;
 }
 
+void decToHex(int x)
+{
+    char hex[100];
+    int i = 0, t = 0;
+    while (x != 0)
+    {
+        t = x % 16;
+        if (t < 10)
+            hex[i] = t + 48;
+        else
+            hex[i] = t + 55;
+        i++;
+        x = x / 16;
+    }
+    for (int j = i - 1; j >= 0; j--)
+        cout << hex[j];
+}
+
 void printRegisterFile()
 {
     for (int i = 0; i < 32; i++)
     {
+        /*cout << "$" << i << " = ";
+        decToHex(RegisterFile[i]);
+        cout << endl;*/
         cout << "$" << i << " = " << RegisterFile[i] << endl;
     }
 }
@@ -208,11 +233,52 @@ int main(int argc, char **argv)
 
             else if (f_word == "lw")
             {
+
                 cout << "load word from memory" << endl;
+                l >> word_1;
+                l >> word_2;
+                word_1 = word_1.substr(0, word_1.length() - 1);
+                if (word_2.at(0) == '$')
+                {
+                    RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(word_2)]];
+                }
+                else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+                {
+                    //word_2 is of the form 100($t1)
+                    int c1 = word_2.find('(');
+                    int c2 = word_2.find(')');
+                    string offset = word_2.substr(0, c1);
+                    string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+                    RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
+                }
+                else
+                {
+                    cout << "loading from memory (label)";
+                }
             }
             else if (f_word == "sw")
             {
-                cout << "store word in memory" << endl;
+                cout << "storing word from memory" << endl;
+                l >> word_1;
+                l >> word_2;
+                word_1 = word_1.substr(0, word_1.length() - 1);
+                if (word_2.at(0) == '$')
+                {
+                    MainMemory[getRegister(word_2)] = getRegister(word_1);
+                }
+                else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+                {
+                    //word_2 is of the form 100($t1)
+                    int c1 = word_2.find('(');
+                    int c2 = word_2.find(')');
+                    string offset = word_2.substr(0, c1);
+                    string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+                    MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
+                }
+                else
+                {
+                    cout << "storing into memory (label)";
+                }
             }
             else if (f_word == "beq")
             {

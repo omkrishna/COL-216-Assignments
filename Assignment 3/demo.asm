@@ -7,8 +7,7 @@
 	.text 		
 
 main:
-	li $t2, 25		
-	lw $t3, value	
+	lw $t3, 100($2)	
 	addi $t2, $0, 26
 	addi $t3, $0, 7
 	add $t4, $t2, $t3	
@@ -22,4 +21,4 @@ main:
 	.data
 
 value:	.word 12
-Z:	.word 0
+Z:	.word 10
