@@ -91,9 +91,6 @@ int main(int argc, char **argv)
     f.open(argv[1], ios::in);
     bool text = false, data = false;
 
-    RegisterFile[10] = 7;
-    RegisterFile[11] = 26;
-
     int lineC = 0;
 
     if (!f)
@@ -235,7 +232,31 @@ int main(int argc, char **argv)
             }
             else if (f_word == "addi")
             {
-                cout << "add two regs and store in third" << endl;
+                cout << "addi instruction read" << endl;
+                l >> word_1;
+                l >> word_2;
+                l >> word_3;
+                if (word_1.at(word_1.length() - 1) != ',')
+                {
+                    cout << "Err : missing , on line " << lineC << endl;
+                    break;
+                }
+                if (word_2.at(word_2.length() - 1) != ',')
+                {
+                    cout << "Err : missing , on line " << lineC << endl;
+                    break;
+                }
+                if (word_3.at(word_3.length() - 1) == ',')
+                {
+                    cout << "Err : too many , on line " << lineC << endl;
+                    break;
+                }
+                word_1 = word_1.substr(0, word_1.length() - 1);
+                word_2 = word_2.substr(0, word_2.length() - 1);
+
+                // incomplete - Check if word_3 contains 'x' -> convert hexadecimal to decimal and then add
+                RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + stoi(word_3);
+                printRegisterFile();
             }
 
             //Here we are reading a line word by word

@@ -8,9 +8,11 @@
 
 main:
 	li $t2, 25		
-	lw $t3, value		# Load the word stored in value (see bottom)
-	add $t4, $t2, $t3	# Add
-	sub $t5, $t2, $t3	# Subtract
+	lw $t3, value	
+	addi $t2, $0, 26
+	addi $t3, $0, 7
+	add $t4, $t2, $t3	
+	sub $t5, $t2, $t3	
 	sw $t5, Z		
 
 
