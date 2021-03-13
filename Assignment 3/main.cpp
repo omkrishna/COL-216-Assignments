@@ -294,7 +294,9 @@ void executer(string line, int lineN)
             RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
         }
         else
-            cout << "loading from memory (label)\n";
+        {
+            RegisterFile[getRegister(word_1)] = variables[word_2];
+        }
 
         printRegisterFile();
         if (lineN != lineC)
@@ -322,7 +324,7 @@ void executer(string line, int lineN)
             MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
         }
         else
-            cout << "storing into memory (label)\n";
+            variables[word_2] = RegisterFile[getRegister(word_1)];
 
         printRegisterFile();
         if (lineN != lineC)
@@ -557,6 +559,7 @@ void executer(string line, int lineN)
             return;
         }
 
+        cout << f_word.substr(0, f_word.length() - 1);
         variables[f_word.substr(0, f_word.length() - 1)] = stoi(val);
 
         if (lineN != lineC)

@@ -1,31 +1,15 @@
-# A demonstration of some simple MIPS instructions
-# used to test QtSPIM
-
-# Declare main as a global function
-.globl main 
-
-
+.data
+integer: .word 50
 
 .text
-
 main:
-	lw $t3, 100($2)	
-	addi $t2, $0, 26
-	addi $t3, $0, 26
-	slt $t1, $t3, $t2
+	addi $t1, $0, 100
+	addi $t2, $0, 20
+
+	lw $t3, addr
+	lw $t4, $t3
 	
-	add $t4, $t2, $t3
-	j endblock
-	sub $t5, $t2, $t3	
-	
-	sw $t5, Z	
-	addi $t6, $0, 100
 
-	beq $t2, $t3, endblock
+	li $v0, 10 
+	syscall
 
-endblock:
-	add $t4, $t2, $t3
-
-.data
-value:	.word 12
-Z:	.word 10
