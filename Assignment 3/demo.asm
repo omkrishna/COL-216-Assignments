@@ -6,7 +6,7 @@
 
 
 
-.text 		
+.text
 
 main:
 	lw $t3, 100($2)	
@@ -15,16 +15,13 @@ main:
 	slt $t1, $t3, $t2
 	
 	add $t4, $t2, $t3
-	
+	j endblock
 	sub $t5, $t2, $t3	
 	
 	sw $t5, Z	
 	addi $t6, $0, 100
 
 	beq $t2, $t3, endblock
-
-	li $v0, 10 # Sets $v0 to "10" to select exit syscall
-	syscall # Exit
 
 endblock:
 	add $t4, $t2, $t3

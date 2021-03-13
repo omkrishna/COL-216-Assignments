@@ -11,19 +11,31 @@ int MainMemory[1048576];
 
 int lineC = 0;
 
+int addC = 0, subC = 0, mulC = 0, addiC = 0, beqC = 0, bneC = 0, sltC = 0, jC = 0, lwC = 0, swC = 0, clockC = 0;
 string AssemblyLines[1000];
 map<string, int> blocks;
+
+map<int, int> addresses;
 
 map<string, int> variables;
 
 bool text = false, data = false;
+
+string removeFrontSpaces(string str)
+{
+    int x = str.find_first_not_of(' ');
+    return str.substr(x != std::string::npos ? x : 0);
+}
 
 int getRegister(string s)
 {
     if (s == "$0" || s == "$zero")
         return 0;
     else if (s == "$1" || s == "$at")
-        return 1;
+    {
+        cout << "Err : Trying to access a restricted register " << endl;
+        return -1;
+    }
     else if (s == "$2" || s == "$v0")
         return 2;
     else if (s == "$3" || s == "$v1")
@@ -73,9 +85,15 @@ int getRegister(string s)
     else if (s == "$25" || s == "$t9")
         return 25;
     else if (s == "$26" || s == "$k0")
-        return 26;
+    {
+        cout << "Err : Trying to access a restricted register " << endl;
+        return -1;
+    }
     else if (s == "$27" || s == "$k1")
-        return 27;
+    {
+        cout << "Err : Trying to access a restricted register " << endl;
+        return -1;
+    }
     else if (s == "$28" || s == "$gp")
         return 28;
     else if (s == "$29" || s == "$sp")
@@ -158,6 +176,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "add")
     {
+        addC++;
+        clockC++;
         cout << "\nadd instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -189,6 +209,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "sub")
     {
+        subC++;
+        clockC++;
         cout << "\nsub instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -220,6 +242,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "mul")
     {
+        mulC++;
+        clockC++;
         cout << "\nmul instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -251,6 +275,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "lw")
     {
+        lwC++;
+        clockC++;
         cout << "\nlw instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -277,6 +303,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "sw")
     {
+        swC++;
+        clockC++;
         cout << "\nsw instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -303,6 +331,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "beq")
     {
+        beqC++;
+        clockC++;
         cout << "\nbeq instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -356,6 +386,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "bne")
     {
+        bneC++;
+        clockC++;
         cout << "\nbne instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -409,6 +441,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "slt")
     {
+        sltC++;
+        clockC++;
         cout << "\nslt instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -446,8 +480,27 @@ void executer(string line, int lineN)
 
     else if (f_word == "j")
     {
+        jC++;
+        clockC++;
         cout << "\nj instruction read" << endl;
+
         l >> word_1;
+
+        if (word_1[0] >= 48 && word_1[0] <= 57)
+        {
+            int addr = stoi(word_1);
+            int a = addresses[addr];
+            if (addr % 4 != 0 || a == 0)
+            {
+                cout << "Err : invalid jump address at line " << lineN << endl;
+                return;
+            }
+            else
+            {
+                executer(AssemblyLines[a], a);
+            }
+        }
+
         int b = blocks[word_1];
         if (b == 0)
         {
@@ -460,6 +513,8 @@ void executer(string line, int lineN)
 
     else if (f_word == "addi")
     {
+        addiC++;
+        clockC++;
         cout << "\naddi instruction read" << endl;
         l >> word_1;
         l >> word_2;
@@ -526,10 +581,23 @@ int main(int argc, char **argv)
     else
     {
         string line;
+        int addr = 0;
         while (getline(f, line))
         {
+
             lineC++;
             AssemblyLines[lineC] = line;
+
+            string f_word;
+            istringstream l(line);
+            l >> f_word;
+
+            if (f_word == "add" || f_word == "sub" || f_word == "mul" || f_word == "addi" || f_word == "beq" || f_word == "bne" || f_word == "slt" ||
+                f_word == "j" || f_word == "lw" || f_word == "sw")
+            {
+                addresses[addr] = lineC;
+                addr = addr + 4;
+            }
 
             istringstream iss(line);
             string word;
@@ -542,10 +610,14 @@ int main(int argc, char **argv)
             }
         }
 
-        int m = blocks["main:"];
+        int m = blocks["main"];
         int d = blocks[".data"];
         if (m == 0)
+        {
             cout << "Err : main not found" << endl;
+            return 0;
+        }
+
         if (m < d || d == 0)
         {
             executer(AssemblyLines[m], m);
@@ -556,6 +628,27 @@ int main(int argc, char **argv)
         //cout << variables["value"];
 
         f.close();
+
+        cout << endl
+             << "Execution Complete " << endl;
+        cout << endl
+             << "Total clock cycles = " << clockC << endl;
+        cout << "# of executions " << endl;
+        cout << "add = " << addC << endl;
+        cout << "sub = " << subC << endl;
+        cout << "mul = " << mulC << endl;
+        cout << "addi = " << addiC << endl;
+        cout << "beq = " << beqC << endl;
+        cout << "bne = " << bneC << endl;
+        cout << "slt = " << sltC << endl;
+        cout << "j = " << jC << endl;
+        cout << "lw = " << lwC << endl;
+        cout << "sw = " << swC << endl;
+
+        cout << endl
+             << "Memory usage" << endl;
+        cout << "Instructions = " << addresses.size() * 4 << " bytes" << endl;
+        cout << "Data = " << variables.size() * 4 << " bytes" << endl;
     }
 
     return 0;
