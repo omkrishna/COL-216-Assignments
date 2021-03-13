@@ -13,19 +13,12 @@ int lineC = 0;
 
 int addC = 0, subC = 0, mulC = 0, addiC = 0, beqC = 0, bneC = 0, sltC = 0, jC = 0, lwC = 0, swC = 0, clockC = 0;
 string AssemblyLines[1000];
+
 map<string, int> blocks;
-
 map<int, int> addresses;
-
 map<string, int> variables;
 
 bool text = false, data = false;
-
-string removeFrontSpaces(string str)
-{
-    int x = str.find_first_not_of(' ');
-    return str.substr(x != std::string::npos ? x : 0);
-}
 
 int getRegister(string s)
 {
@@ -124,17 +117,40 @@ void decToHex(int x)
         cout << hex[j];
 }
 
+int hexToDec(string x)
+{
+    int len = x.length();
+    int base = 1;
+    int temp = 0;
+    for (int i = len - 1; i >= 0; i--)
+    {
+        if (x.at(i) >= '0' && x.at(i) <= '9')
+        {
+            temp += (x.at(i) - 48) * base;
+            base = base * 16;
+        }
+        else if (x.at(i) >= 'A' && x.at(i) <= 'F')
+        {
+            temp += (x.at(i) - 55) * base;
+            base = base * 16;
+        }
+    }
+    return temp;
+}
+
 void printRegisterFile()
 {
-    cout << "Hex Values\tDec Values\n";
+    cout << "Hex Values\n";
     for (int i = 0; i < 32; i++)
     {
-        cout << "$" << i << " = 0x";
+        cout << "$" << i << " = ";
         if (RegisterFile[i] == 0)
             cout << "0";
         else
             decToHex(RegisterFile[i]);
-        cout << "\t$" << i << " = " << RegisterFile[i] << endl;
+        cout << endl;
+
+        //cout << "\t\t$" << i << " = " << RegisterFile[i] << endl;
     }
 }
 
@@ -541,8 +557,16 @@ void executer(string line, int lineN)
         word_1 = word_1.substr(0, word_1.length() - 1);
         word_2 = word_2.substr(0, word_2.length() - 1);
 
-        // incomplete - Check if word_3 contains 'x' -> convert hexadecimal to decimal and then add
-        RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + stoi(word_3);
+        if (word_3.substr(0, 2) != "0x")
+        {
+            RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + stoi(word_3);
+        }
+        else
+        {
+            word_3 = word_3.substr(2, word_3.length());
+            RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + hexToDec(word_3);
+        }
+
         printRegisterFile();
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);

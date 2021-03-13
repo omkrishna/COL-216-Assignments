@@ -1,15 +1,13 @@
-.data
-integer: .word 50
-
 .text
 main:
-	addi $t1, $0, 100
-	addi $t2, $0, 20
+    addi $s0, $s0, 100
+    addi $s1, $s1, 0x1A
+    add $s2, $s0, $s1
+    sub $s3, $s2, $s1
+    mul $s4, $s1, $s2
 
-	lw $t3, addr
-	lw $t4, $t3
-	
-
-	li $v0, 10 
-	syscall
+end:
+		addi $s7, $zero, 100
+    li $v0,10
+    syscall
 
