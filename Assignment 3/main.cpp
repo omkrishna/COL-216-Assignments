@@ -185,7 +185,7 @@ void executer(string line, int lineN)
 
     else if (f_word == "main:")
     {
-        cout << "\nmain func starts here" << endl;
+        //cout << "\nmain func starts here" << endl;
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
     }
@@ -598,7 +598,7 @@ void executer(string line, int lineN)
 
 int main(int argc, char **argv)
 {
-
+    RegisterFile[29] = 1048500;
     fstream f;
     f.open(argv[1], ios::in);
     bool text = false, data = false;

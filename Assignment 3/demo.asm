@@ -7,7 +7,7 @@ main:
     mul $s4, $s1, $s2
 
 end:
-		addi $s7, $zero, 100
+	addi $s7, $zero, 100
     li $v0,10
     syscall
 
