@@ -28,7 +28,8 @@ int getRegister(string s)
         return 0;
     else if (s == "$1" || s == "$at")
     {
-        fout << "Err : Trying to access a restricted register " << "\n";
+        fout << "Err : Trying to access a restricted register "
+             << "\n";
         return -1;
     }
     else if (s == "$2" || s == "$v0")
@@ -81,12 +82,14 @@ int getRegister(string s)
         return 25;
     else if (s == "$26" || s == "$k0")
     {
-        fout << "Err : Trying to access a restricted register " << "\n";
+        fout << "Err : Trying to access a restricted register "
+             << "\n";
         return -1;
     }
     else if (s == "$27" || s == "$k1")
     {
-        fout << "Err : Trying to access a restricted register " << "\n";
+        fout << "Err : Trying to access a restricted register "
+             << "\n";
         return -1;
     }
     else if (s == "$28" || s == "$gp")
@@ -142,15 +145,15 @@ int hexToDec(string x)
 
 void printRegisterFile()
 {
-    fout << "Hex Values: " << clockC << "\n";
+    fout << "\nCycle Number: " << clockC << "\n";
     for (int i = 0; i < 32; i++)
     {
-        fout << "$" << i << " = ";
+        //fout << "$" << i << " = ";
         if (RegisterFile[i] == 0)
             fout << "0";
         else
             decToHex(RegisterFile[i]);
-        fout << "\n";
+        fout << " ";
 
         //fout << "\t\t$" << i << " = " << RegisterFile[i] << "\n";
     }
@@ -172,7 +175,8 @@ void executer(string line, int lineN)
     {
         text = true;
         data = false;
-        fout << "\nCoding block" << "\n";
+        fout << "\nCoding block"
+             << "\n";
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
     }
@@ -196,7 +200,7 @@ void executer(string line, int lineN)
     {
         addC++;
         clockC++;
-        fout << "\nadd instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -229,7 +233,7 @@ void executer(string line, int lineN)
     {
         subC++;
         clockC++;
-        fout << "\nsub instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -262,7 +266,7 @@ void executer(string line, int lineN)
     {
         mulC++;
         clockC++;
-        fout << "\nmul instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -295,7 +299,7 @@ void executer(string line, int lineN)
     {
         lwC++;
         clockC++;
-        fout << "\nlw instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         word_1 = word_1.substr(0, word_1.length() - 1);
@@ -304,12 +308,19 @@ void executer(string line, int lineN)
             RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(word_2)]];
         else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
         {
-            //word_2 is of the form 100($t1)
-            int c1 = word_2.find('(');
-            int c2 = word_2.find(')');
-            string offset = word_2.substr(0, c1);
-            string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
-            RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
+            if (word_2.find('$') != std::string::npos)
+            {
+                //word_2 is of the form 100($t1)
+                int c1 = word_2.find('(');
+                int c2 = word_2.find(')');
+                string offset = word_2.substr(0, c1);
+                string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+                RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
+            }
+            else
+            {
+                RegisterFile[getRegister(word_1)] = MainMemory[stoi(word_2)];
+            }
         }
         else
         {
@@ -325,7 +336,7 @@ void executer(string line, int lineN)
     {
         swC++;
         clockC++;
-        fout << "\nsw instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         word_1 = word_1.substr(0, word_1.length() - 1);
@@ -334,12 +345,19 @@ void executer(string line, int lineN)
             MainMemory[getRegister(word_2)] = getRegister(word_1);
         else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
         {
-            //word_2 is of the form 100($t1)
-            int c1 = word_2.find('(');
-            int c2 = word_2.find(')');
-            string offset = word_2.substr(0, c1);
-            string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
-            MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
+            if (word_2.find('$') != std::string::npos)
+            {
+                // word_2 is of the form 100($t1)
+                int c1 = word_2.find('(');
+                int c2 = word_2.find(')');
+                string offset = word_2.substr(0, c1);
+                string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+                MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
+            }
+            else
+            {
+                MainMemory[stoi(word_2)] = RegisterFile[getRegister(word_1)];
+            }
         }
         else
             variables[word_2] = RegisterFile[getRegister(word_1)];
@@ -353,7 +371,7 @@ void executer(string line, int lineN)
     {
         beqC++;
         clockC++;
-        fout << "\nbeq instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -383,7 +401,19 @@ void executer(string line, int lineN)
             printRegisterFile();
 
             if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
-                executer(AssemblyLines[lineN + stoi(word_3)], lineN + stoi(word_3));
+            {
+                int addr = stoi(word_3);
+                int a = addresses[addr];
+                if (addr % 4 != 0 || a == 0)
+                {
+                    fout << "Err : invalid jump address at line " << lineN << "\n";
+                    return;
+                }
+                else
+                {
+                    executer(AssemblyLines[a], a);
+                }
+            }
             else
             {
                 int r = blocks[word_3];
@@ -408,7 +438,7 @@ void executer(string line, int lineN)
     {
         bneC++;
         clockC++;
-        fout << "\nbne instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -438,7 +468,19 @@ void executer(string line, int lineN)
             printRegisterFile();
 
             if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
-                executer(AssemblyLines[lineN + stoi(word_3)], lineN + stoi(word_3));
+            {
+                int addr = stoi(word_3);
+                int a = addresses[addr];
+                if (addr % 4 != 0 || a == 0)
+                {
+                    fout << "Err : invalid jump address at line " << lineN << "\n";
+                    return;
+                }
+                else
+                {
+                    executer(AssemblyLines[a], a);
+                }
+            }
             else
             {
                 int r = blocks[word_3];
@@ -463,7 +505,7 @@ void executer(string line, int lineN)
     {
         sltC++;
         clockC++;
-        fout << "\nslt instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -502,7 +544,6 @@ void executer(string line, int lineN)
     {
         jC++;
         clockC++;
-        fout << "\nj instruction read" << "\n";
 
         l >> word_1;
 
@@ -535,7 +576,7 @@ void executer(string line, int lineN)
     {
         addiC++;
         clockC++;
-        fout << "\naddi instruction read" << "\n";
+
         l >> word_1;
         l >> word_2;
         l >> word_3;
@@ -581,7 +622,8 @@ void executer(string line, int lineN)
 
         if (type != ".word")
         {
-            fout << "Err : Unsupported data type" << "\n";
+            fout << "Err : Unsupported data type"
+                 << "\n";
             return;
         }
 
@@ -598,15 +640,30 @@ void executer(string line, int lineN)
     }
 }
 
+void printMainMemory()
+{
+    int i;
+    for (i = 0; i < 1048576; i = i + 4)
+    {
+        if (MainMemory[i])
+        {
+            fout << i << "-" << i + 3 << ": ";
+            decToHex(MainMemory[i]);
+            fout << endl;
+        }
+    }
+}
+
 int main(int argc, char **argv)
 {
-    RegisterFile[29] = 1048500;
+    RegisterFile[29] = MainMemory[1048500];
     fstream f;
     f.open(argv[1], ios::in);
     bool text = false, data = false;
 
     if (!f)
-        fout << "File not found. Check the filename and/or extension" << "\n";
+        fout << "File not found. Check the filename and/or extension"
+             << "\n";
     else
     {
         string line;
@@ -643,7 +700,8 @@ int main(int argc, char **argv)
         int d = blocks[".data"];
         if (m == 0)
         {
-            fout << "Err : main not found" << "\n";
+            fout << "Err : main not found"
+                 << "\n";
             return 0;
         }
 
@@ -662,7 +720,9 @@ int main(int argc, char **argv)
              << "Execution Complete\n";
         fout << "\n"
              << "Total clock cycles = " << clockC << "\n";
-        fout << "# of executions " << "\n";
+
+        /*fout << "# of executions "
+             << "\n";
         fout << "add = " << addC << "\n";
         fout << "sub = " << subC << "\n";
         fout << "mul = " << mulC << "\n";
@@ -675,9 +735,15 @@ int main(int argc, char **argv)
         fout << "sw = " << swC << "\n";
 
         fout << "\n"
-             << "Memory usage" << "\n";
-        fout << "Instructions = " << addresses.size() * 4 << " bytes" << "\n";
-        fout << "Data = " << variables.size() * 4 << " bytes" << "\n";
+             << "Memory usage"
+             << "\n";
+        fout << "Instructions = " << addresses.size() * 4 << " bytes"
+             << "\n";
+        fout << "Data = " << variables.size() * 4 << " bytes"
+             << "\n";
+        */
+
+        printMainMemory();
     }
 
     fout.close();
