@@ -6,6 +6,8 @@
 
 using namespace std;
 
+ofstream fout("output.txt");
+
 int RegisterFile[32];
 int MainMemory[1048576];
 
@@ -26,7 +28,7 @@ int getRegister(string s)
         return 0;
     else if (s == "$1" || s == "$at")
     {
-        cout << "Err : Trying to access a restricted register " << endl;
+        fout << "Err : Trying to access a restricted register " << "\n";
         return -1;
     }
     else if (s == "$2" || s == "$v0")
@@ -79,12 +81,12 @@ int getRegister(string s)
         return 25;
     else if (s == "$26" || s == "$k0")
     {
-        cout << "Err : Trying to access a restricted register " << endl;
+        fout << "Err : Trying to access a restricted register " << "\n";
         return -1;
     }
     else if (s == "$27" || s == "$k1")
     {
-        cout << "Err : Trying to access a restricted register " << endl;
+        fout << "Err : Trying to access a restricted register " << "\n";
         return -1;
     }
     else if (s == "$28" || s == "$gp")
@@ -114,7 +116,7 @@ void decToHex(int x)
         x = x / 16;
     }
     for (int j = i - 1; j >= 0; j--)
-        cout << hex[j];
+        fout << hex[j];
 }
 
 int hexToDec(string x)
@@ -140,17 +142,17 @@ int hexToDec(string x)
 
 void printRegisterFile()
 {
-    cout << "Hex Values\n";
+    fout << "Hex Values: " << clockC << "\n";
     for (int i = 0; i < 32; i++)
     {
-        cout << "$" << i << " = ";
+        fout << "$" << i << " = ";
         if (RegisterFile[i] == 0)
-            cout << "0";
+            fout << "0";
         else
             decToHex(RegisterFile[i]);
-        cout << endl;
+        fout << "\n";
 
-        //cout << "\t\t$" << i << " = " << RegisterFile[i] << endl;
+        //fout << "\t\t$" << i << " = " << RegisterFile[i] << "\n";
     }
 }
 
@@ -170,7 +172,7 @@ void executer(string line, int lineN)
     {
         text = true;
         data = false;
-        cout << "\nCoding block" << endl;
+        fout << "\nCoding block" << "\n";
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
     }
@@ -185,7 +187,7 @@ void executer(string line, int lineN)
 
     else if (f_word == "main:")
     {
-        //cout << "\nmain func starts here" << endl;
+        //fout << "\nmain func starts here" << "\n";
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
     }
@@ -194,24 +196,24 @@ void executer(string line, int lineN)
     {
         addC++;
         clockC++;
-        cout << "\nadd instruction read" << endl;
+        fout << "\nadd instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -227,24 +229,24 @@ void executer(string line, int lineN)
     {
         subC++;
         clockC++;
-        cout << "\nsub instruction read" << endl;
+        fout << "\nsub instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -260,24 +262,24 @@ void executer(string line, int lineN)
     {
         mulC++;
         clockC++;
-        cout << "\nmul instruction read" << endl;
+        fout << "\nmul instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -293,7 +295,7 @@ void executer(string line, int lineN)
     {
         lwC++;
         clockC++;
-        cout << "\nlw instruction read" << endl;
+        fout << "\nlw instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         word_1 = word_1.substr(0, word_1.length() - 1);
@@ -323,7 +325,7 @@ void executer(string line, int lineN)
     {
         swC++;
         clockC++;
-        cout << "\nsw instruction read" << endl;
+        fout << "\nsw instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         word_1 = word_1.substr(0, word_1.length() - 1);
@@ -351,24 +353,24 @@ void executer(string line, int lineN)
     {
         beqC++;
         clockC++;
-        cout << "\nbeq instruction read" << endl;
+        fout << "\nbeq instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -387,7 +389,7 @@ void executer(string line, int lineN)
                 int r = blocks[word_3];
                 if (r == 0)
                 {
-                    cout << "Err : specified block not found at line " << lineN << endl;
+                    fout << "Err : specified block not found at line " << lineN << "\n";
                     return;
                 }
                 else
@@ -406,24 +408,24 @@ void executer(string line, int lineN)
     {
         bneC++;
         clockC++;
-        cout << "\nbne instruction read" << endl;
+        fout << "\nbne instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -442,7 +444,7 @@ void executer(string line, int lineN)
                 int r = blocks[word_3];
                 if (r == 0)
                 {
-                    cout << "Err : specified block not found at line " << lineN << endl;
+                    fout << "Err : specified block not found at line " << lineN << "\n";
                     return;
                 }
                 else
@@ -461,24 +463,24 @@ void executer(string line, int lineN)
     {
         sltC++;
         clockC++;
-        cout << "\nslt instruction read" << endl;
+        fout << "\nslt instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -500,7 +502,7 @@ void executer(string line, int lineN)
     {
         jC++;
         clockC++;
-        cout << "\nj instruction read" << endl;
+        fout << "\nj instruction read" << "\n";
 
         l >> word_1;
 
@@ -510,7 +512,7 @@ void executer(string line, int lineN)
             int a = addresses[addr];
             if (addr % 4 != 0 || a == 0)
             {
-                cout << "Err : invalid jump address at line " << lineN << endl;
+                fout << "Err : invalid jump address at line " << lineN << "\n";
                 return;
             }
             else
@@ -522,7 +524,7 @@ void executer(string line, int lineN)
         int b = blocks[word_1];
         if (b == 0)
         {
-            cout << "Err : specified block not found at line " << lineN << endl;
+            fout << "Err : specified block not found at line " << lineN << "\n";
             return;
         }
         else
@@ -533,24 +535,24 @@ void executer(string line, int lineN)
     {
         addiC++;
         clockC++;
-        cout << "\naddi instruction read" << endl;
+        fout << "\naddi instruction read" << "\n";
         l >> word_1;
         l >> word_2;
         l >> word_3;
 
         if (word_1.at(word_1.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
-            cout << "Err : missing , on line " << lineN << endl;
+            fout << "Err : missing , on line " << lineN << "\n";
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
-            cout << "Err : too many , on line " << lineN << endl;
+            fout << "Err : too many , on line " << lineN << "\n";
             return;
         }
 
@@ -579,11 +581,11 @@ void executer(string line, int lineN)
 
         if (type != ".word")
         {
-            cout << "Err : Unsupported data type" << endl;
+            fout << "Err : Unsupported data type" << "\n";
             return;
         }
 
-        cout << f_word.substr(0, f_word.length() - 1);
+        fout << f_word.substr(0, f_word.length() - 1);
         variables[f_word.substr(0, f_word.length() - 1)] = stoi(val);
 
         if (lineN != lineC)
@@ -604,7 +606,7 @@ int main(int argc, char **argv)
     bool text = false, data = false;
 
     if (!f)
-        cout << "File not found. Check the filename and/or extension" << endl;
+        fout << "File not found. Check the filename and/or extension" << "\n";
     else
     {
         string line;
@@ -641,7 +643,7 @@ int main(int argc, char **argv)
         int d = blocks[".data"];
         if (m == 0)
         {
-            cout << "Err : main not found" << endl;
+            fout << "Err : main not found" << "\n";
             return 0;
         }
 
@@ -652,31 +654,32 @@ int main(int argc, char **argv)
         else
             executer(AssemblyLines[d], d);
 
-        //cout << variables["value"];
+        //fout << variables["value"];
 
         f.close();
 
-        cout << endl
-             << "Execution Complete " << endl;
-        cout << endl
-             << "Total clock cycles = " << clockC << endl;
-        cout << "# of executions " << endl;
-        cout << "add = " << addC << endl;
-        cout << "sub = " << subC << endl;
-        cout << "mul = " << mulC << endl;
-        cout << "addi = " << addiC << endl;
-        cout << "beq = " << beqC << endl;
-        cout << "bne = " << bneC << endl;
-        cout << "slt = " << sltC << endl;
-        cout << "j = " << jC << endl;
-        cout << "lw = " << lwC << endl;
-        cout << "sw = " << swC << endl;
+        fout << "\n"
+             << "Execution Complete\n";
+        fout << "\n"
+             << "Total clock cycles = " << clockC << "\n";
+        fout << "# of executions " << "\n";
+        fout << "add = " << addC << "\n";
+        fout << "sub = " << subC << "\n";
+        fout << "mul = " << mulC << "\n";
+        fout << "addi = " << addiC << "\n";
+        fout << "beq = " << beqC << "\n";
+        fout << "bne = " << bneC << "\n";
+        fout << "slt = " << sltC << "\n";
+        fout << "j = " << jC << "\n";
+        fout << "lw = " << lwC << "\n";
+        fout << "sw = " << swC << "\n";
 
-        cout << endl
-             << "Memory usage" << endl;
-        cout << "Instructions = " << addresses.size() * 4 << " bytes" << endl;
-        cout << "Data = " << variables.size() * 4 << " bytes" << endl;
+        fout << "\n"
+             << "Memory usage" << "\n";
+        fout << "Instructions = " << addresses.size() * 4 << " bytes" << "\n";
+        fout << "Data = " << variables.size() * 4 << " bytes" << "\n";
     }
 
+    fout.close();
     return 0;
 }
