@@ -342,7 +342,7 @@ void executer(string line, int lineN)
         word_1 = word_1.substr(0, word_1.length() - 1);
 
         if (word_2.at(0) == '$')
-            MainMemory[getRegister(word_2)] = getRegister(word_1);
+            MainMemory[RegisterFile[getRegister(word_2)]] = RegisterFile[getRegister(word_1)];
         else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
         {
             if (word_2.find('$') != std::string::npos)
@@ -352,7 +352,7 @@ void executer(string line, int lineN)
                 int c2 = word_2.find(')');
                 string offset = word_2.substr(0, c1);
                 string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
-                MainMemory[getRegister(reg) + stoi(offset)] = getRegister(word_1);
+                MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)] = RegisterFile[getRegister(word_1)];
             }
             else
             {
@@ -399,7 +399,7 @@ void executer(string line, int lineN)
         if (RegisterFile[getRegister(word_1)] == RegisterFile[getRegister(word_2)])
         {
             printRegisterFile();
-
+            
             if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
             {
                 int addr = stoi(word_3);
@@ -411,7 +411,20 @@ void executer(string line, int lineN)
                 }
                 else
                 {
-                    executer(AssemblyLines[a], a);
+                    executer(AssemblyLines[lineN + (a/4)], lineN+(a/4));
+                }
+            }else if(word_3.at(0)=='-'){
+                int addr = stoi(word_3.substr(1));
+                
+                int a = addresses[addr];
+                if (addr % 4 != 0 || a == 0)
+                {
+                    fout << "Err : invalid jump address at line " << lineN << "\n";
+                    return;
+                }
+                else
+                {
+                    executer(AssemblyLines[lineN - (a/4)], lineN-(a/4));
                 }
             }
             else
@@ -478,7 +491,20 @@ void executer(string line, int lineN)
                 }
                 else
                 {
-                    executer(AssemblyLines[a], a);
+                    executer(AssemblyLines[lineN + (addr/4)], lineN+(addr/4));
+                }
+            }else if(word_3.at(0)=='-'){
+                int addr = stoi(word_3.substr(1));
+                
+                int a = addresses[addr];
+                if (addr % 4 != 0 || a == 0)
+                {
+                    fout << "Err : invalid jump address at line " << lineN << "\n";
+                    return;
+                }
+                else
+                {
+                    executer(AssemblyLines[lineN - (addr/4)], lineN-(addr/4));
                 }
             }
             else
