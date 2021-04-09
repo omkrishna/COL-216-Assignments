@@ -33,6 +33,7 @@ bool text = false, data = false;
 void reorderingInstructions(string line, int lineN);
 set<int> skippedLines[1000];
 set<string> depRegisters[30];
+map<int, int> rev_addresses; // lineN -> addr
 
 int getRegister(string s)
 {
@@ -303,7 +304,8 @@ void executer(string line, int lineN)
         word_2 = word_2.substr(0, word_2.length() - 1);
         RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + RegisterFile[getRegister(word_3)];
 
-        fout << "cycle " << clockC << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)] << "\n";
+        fout << "cycle " << clockC << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)] << "; Instruction at address " << rev_addresses[lineN] << " completed"
+             << "\n";
 
         //printRegisterFile();
         if (lineN != lineC)
@@ -338,7 +340,8 @@ void executer(string line, int lineN)
         word_1 = word_1.substr(0, word_1.length() - 1);
         word_2 = word_2.substr(0, word_2.length() - 1);
         RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] - RegisterFile[getRegister(word_3)];
-        fout << "cycle " << clockC << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)] << "\n";
+        fout << "cycle " << clockC << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)] << "; Instruction at address " << rev_addresses[lineN] << " completed"
+             << "\n";
         //printRegisterFile();
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
@@ -373,7 +376,8 @@ void executer(string line, int lineN)
         word_2 = word_2.substr(0, word_2.length() - 1);
         RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] * RegisterFile[getRegister(word_3)];
 
-        fout << "cycle " << clockC << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)] << "\n";
+        fout << "cycle " << clockC << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)] << "; Instruction at address " << rev_addresses[lineN] << " completed"
+             << "\n";
         //printRegisterFile();
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
@@ -386,6 +390,7 @@ void executer(string line, int lineN)
 
         fout << "cycle " << clockC << ": "
              << "DRAM request issued"
+             << "; Instruction at address " << rev_addresses[lineN] << " completed"
              << "\n";
 
         l >> word_1;
@@ -443,8 +448,8 @@ void executer(string line, int lineN)
 
         fout << "cycle " << clockC << ": "
              << "DRAM request issued"
+             << "; Instruction at address " << rev_addresses[lineN] << " completed"
              << "\n";
-
         l >> word_1;
         l >> word_2;
         word_1 = word_1.substr(0, word_1.length() - 1);
@@ -534,6 +539,8 @@ void executer(string line, int lineN)
                 }
                 else
                 {
+                    cout << "Beq Instruction at address " << rev_addresses[lineN] << " completed"
+                         << "\n";
                     executer(AssemblyLines[a], a);
                 }
             }
@@ -546,7 +553,11 @@ void executer(string line, int lineN)
                     return;
                 }
                 else
+                {
+                    cout << "Beq Instruction at address " << rev_addresses[lineN] << " completed"
+                         << "\n";
                     executer(AssemblyLines[r], r);
+                }
             }
         }
         else
@@ -601,6 +612,8 @@ void executer(string line, int lineN)
                 }
                 else
                 {
+                    cout << "Bne Instruction at address " << rev_addresses[lineN] << " completed"
+                         << "\n";
                     executer(AssemblyLines[a], a);
                 }
             }
@@ -613,7 +626,11 @@ void executer(string line, int lineN)
                     return;
                 }
                 else
+                {
+                    cout << "Bne Instruction at address " << rev_addresses[lineN] << " completed"
+                         << "\n";
                     executer(AssemblyLines[r], r);
+                }
             }
         }
         else
@@ -658,6 +675,9 @@ void executer(string line, int lineN)
         else
             RegisterFile[getRegister(word_1)] = 0;
 
+        cout << "Slt Instruction at address " << rev_addresses[lineN] << " completed"
+             << "\n";
+
         //printRegisterFile();
         if (lineN != lineC)
             executer(AssemblyLines[lineN + 1], lineN + 1);
@@ -681,18 +701,26 @@ void executer(string line, int lineN)
             }
             else
             {
+                cout << "j Instruction at address " << rev_addresses[lineN] << " completed"
+                     << "\n";
                 executer(AssemblyLines[a], a);
             }
         }
-
-        int b = blocks[word_1];
-        if (b == 0)
-        {
-            fout << "Err : specified block not found at line " << lineN << "\n";
-            return;
-        }
         else
-            executer(AssemblyLines[b], b);
+        {
+            int b = blocks[word_1];
+            if (b == 0)
+            {
+                fout << "Err : specified block not found at line " << lineN << "\n";
+                return;
+            }
+            else
+            {
+                cout << "j Instruction at address " << rev_addresses[lineN] << " completed"
+                     << "\n";
+                executer(AssemblyLines[b], b);
+            }
+        }
     }
 
     else if (f_word == "addi")
@@ -733,7 +761,8 @@ void executer(string line, int lineN)
             RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + hexToDec(word_3);
         }
 
-        fout << "cycle " << clockC << ": " << word_1 << "=" << word_3 << "\n";
+        fout << "cycle " << clockC << ": " << word_1 << "=" << word_3 << "; Instruction at address " << rev_addresses[lineN] << " completed"
+             << "\n";
 
         //printRegisterFile();
         if (lineN != lineC)
@@ -833,6 +862,7 @@ int main(int argc, char **argv)
                 f_word == "j" || f_word == "lw" || f_word == "sw")
             {
                 addresses[addr] = lineC;
+                rev_addresses[lineC] = addr;
                 addr = addr + 4;
             }
 
@@ -955,6 +985,7 @@ void simpleExecutor(string line, int lineN)
 
         fout << "cycle " << clockC << ": "
              << "DRAM request issued"
+             << "; Instruction at address " << rev_addresses[lineN] << " completed"
              << "\n";
 
         l >> word_1;
@@ -1006,6 +1037,7 @@ void simpleExecutor(string line, int lineN)
 
         fout << "cycle " << clockC << ": "
              << "DRAM request issued"
+             << "; Instruction at address " << rev_addresses[lineN] << " completed"
              << "\n";
 
         l >> word_1;
