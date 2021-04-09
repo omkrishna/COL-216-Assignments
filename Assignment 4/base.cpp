@@ -32,6 +32,7 @@ bool text = false, data = false;
 // ############################# New Addition
 void reorderingInstructions(string line, int lineN);
 set<int> skippedLines[1000];
+set<string> depRegisters[30];
 
 int getRegister(string s)
 {
@@ -427,6 +428,7 @@ void executer(string line, int lineN)
             abort();
         }
 
+        depRegisters->clear();
         reorderingInstructions(AssemblyLines[lineN + 1], lineN + 1);
 
         //printRegisterFile();
@@ -481,6 +483,7 @@ void executer(string line, int lineN)
             return;
         }
 
+        depRegisters->clear();
         reorderingInstructions(AssemblyLines[lineN + 1], lineN + 1);
         //printRegisterFile();
         if (lineN != lineC)
@@ -939,7 +942,7 @@ int getRowNumber(string addr, int lineN)
 
 void simpleExecutor(string line, int lineN)
 {
-    cout << lineN << endl;
+    //cout << lineN << endl;
     // only executes the given line, and not the next
     istringstream l(line);
     string f_word, word_1, word_2, word_3;
@@ -993,6 +996,7 @@ void simpleExecutor(string line, int lineN)
             fout << "Err : unsupported instruction at line " << lineN << endl;
             abort();
         }
+        cout << "line " << lineN << " to be skipped" << endl;
         skippedLines->insert(lineN);
     }
     else if (f_word == "sw")
@@ -1041,13 +1045,14 @@ void simpleExecutor(string line, int lineN)
             fout << "Err : unsupported instruction at line " << lineN << endl;
             return;
         }
+        cout << "line " << lineN << " to be skipped" << endl;
         skippedLines->insert(lineN);
     }
 }
 
 void reorderingInstructions(string line, int lineN)
 {
-    set<string> depRegisters[30];
+
     for (int i = lineN; i <= lineC; i++)
     {
         string f_word;
@@ -1070,6 +1075,7 @@ void reorderingInstructions(string line, int lineN)
             {
                 //cout << i << " should be executed" << endl;
                 simpleExecutor(AssemblyLines[i], i);
+                reorderingInstructions(AssemblyLines[i + 1], i + 1);
                 return;
             }
             //cout << word1.substr(0, word1.length() - 1) << "," << word2 << endl;
