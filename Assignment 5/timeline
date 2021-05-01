@@ -1,0 +1,5 @@
+- add support for branch and jump statements
+- split memory across Cores
+- add support for lw and sw
+- build memory request manager - either queue or have a row buffer for every Core
+- reorder dram operations, with non blocking memory
