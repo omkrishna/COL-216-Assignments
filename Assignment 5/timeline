@@ -1,4 +1,9 @@
-- add support for branch and jump statements
+- Add Support for add, sub, addi, mul - DONE
+- print Cycle wise data - DONE
+- Print Core wise data at the end - DONE
+- add support for branch - DONE
+
+- and jump statements
 - split memory across Cores
 - add support for lw and sw
 - build memory request manager - either queue or have a row buffer for every Core

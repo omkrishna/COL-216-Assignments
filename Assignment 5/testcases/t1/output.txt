@@ -1,0 +1,38 @@
+Cores = 3
+Max Cycles = 4
+
+CYCLE 1
+Core 1: $t0=5
+Core 2: $t0=5
+Core 3: $t0=5
+
+CYCLE 2
+Core 1: $t0=6
+Core 2: $t0=10
+Core 3: $t1=15
+
+CYCLE 3
+Core 1: $t0=8
+Core 2: $t0=17
+Core 3: $t2=45
+
+CYCLE 4
+Core 1: $t2=16
+
+CORE 1
+Cycle 1    addi $t0, $zero, 5
+Cycle 2    addi $t0, $t0, 1
+Cycle 3    addi $t0, $t0, 2
+Cycle 4    add $t2, $t0, $t0
+
+CORE 2
+Cycle 1    addi $t0, $t0, 5
+Cycle 2    addi $t0, $t0, 5
+Cycle 3    addi $t0, $t0, 7
+
+
+CORE 3
+Cycle 1    addi $t0, $t0, 5
+Cycle 2    addi $t1, $t1, 15
+Cycle 3    addi $t2, $t2, 45
+
