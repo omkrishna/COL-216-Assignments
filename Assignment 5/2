@@ -1,4 +1,6 @@
 main:
-    addi $t0, $t0, 5
-    addi $t0, $t0, 5
-    addi $t0, $t0, 7
+    addi $t0, $zero, 5
+    addi $t1, $zero, 50
+    addi $t0, $t0, 5    
+    bne $t0, $t1, 8
+    addi $t3, $t0, 5 

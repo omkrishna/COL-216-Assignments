@@ -161,16 +161,19 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         if (word_1.at(word_1.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
             fout << "Core " << core_no << "Err : too many , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
 
@@ -180,7 +183,7 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         {
             fout << "Core " << core_no << "Err : Zero register cannot be modified" << endl;
             cout << "Err : Zero register cannot be modified" << endl;
-            abort();
+            lineN = lineC + 1;
         }
         RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] + RegisterFile[getRegister(word_3)];
 
@@ -202,16 +205,19 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         if (word_1.at(word_1.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
             fout << "Core " << core_no << "Err : too many , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
 
@@ -221,7 +227,7 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         {
             fout << "Err : Zero register cannot be modified" << endl;
             cout << "Err : Zero register cannot be modified" << endl;
-            abort();
+            lineN = lineC + 1;
         }
         RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] - RegisterFile[getRegister(word_3)];
         fout << "Core " << core_no << ": " << word_1 << "=" << RegisterFile[getRegister(word_1)]
@@ -240,16 +246,19 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         if (word_1.at(word_1.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
             fout << "Core " << core_no << "Err : too many , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
 
@@ -259,7 +268,7 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         {
             fout << "Err : Zero register cannot be modified" << endl;
             cout << "Err : Zero register cannot be modified" << endl;
-            abort();
+            lineN = lineC + 1;
         }
         RegisterFile[getRegister(word_1)] = RegisterFile[getRegister(word_2)] * RegisterFile[getRegister(word_3)];
 
@@ -278,16 +287,19 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         if (word_1.at(word_1.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_2.at(word_2.length() - 1) != ',')
         {
             fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
         if (word_3.at(word_3.length() - 1) == ',')
         {
             fout << "Core " << core_no << "Err : too many , on line " << lineN << "\n";
+            lineN = lineC + 1;
             return;
         }
 
@@ -297,7 +309,7 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
         {
             fout << "Err : Zero register cannot be modified" << endl;
             cout << "Err : Zero register cannot be modified" << endl;
-            abort();
+            lineN = lineC + 1;
         }
 
         if (word_3.substr(0, 2) != "0x")
@@ -313,6 +325,7 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
              << "\n";
         lineN++;
     }
+
     else if (f_word == "beq")
     {
         l >> word_1;
@@ -382,6 +395,7 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
             lineN++;
         }
     }
+
     else if (f_word == "bne")
     {
         l >> word_1;
@@ -451,6 +465,89 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
             lineN++;
         }
     }
+
+    else if (f_word == "slt")
+    {
+        l >> word_1;
+        l >> word_2;
+        l >> word_3;
+
+        if (word_1.at(word_1.length() - 1) != ',')
+        {
+            fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            return;
+        }
+        if (word_2.at(word_2.length() - 1) != ',')
+        {
+            fout << "Core " << core_no << "Err : missing , on line " << lineN << "\n";
+            return;
+        }
+        if (word_3.at(word_3.length() - 1) == ',')
+        {
+            fout << "Core " << core_no << "Err : too many , on line " << lineN << "\n";
+            return;
+        }
+
+        word_1 = word_1.substr(0, word_1.length() - 1);
+        word_2 = word_2.substr(0, word_2.length() - 1);
+
+        //slt $, $, $
+        if (RegisterFile[getRegister(word_2)] < RegisterFile[getRegister(word_3)])
+        {
+            if (word_1 == "$zero" || word_1 == "$0")
+            {
+                fout << "Core " << core_no << "Err : Zero register cannot be modified" << endl;
+                cout << "Core " << core_no << "Err : Zero register cannot be modified" << endl;
+                lineN = lineC + 1;
+            }
+            RegisterFile[getRegister(word_1)] = 1;
+        }
+
+        else
+            RegisterFile[getRegister(word_1)] = 0;
+
+        fout << "Core " << core_no << "Slt Instruction at address "
+             << "\n";
+
+        lineN++;
+    }
+
+    else if (f_word == "j")
+    {
+        l >> word_1;
+
+        if (word_1[0] >= 48 && word_1[0] <= 57)
+        {
+            int addr = stoi(word_1);
+            int a = addresses[addr];
+            if (addr % 4 != 0 || a == 0)
+            {
+                fout << "Core " << core_no << "Err : invalid jump address at line " << lineN << "\n";
+                return;
+            }
+            else
+            {
+                fout << "Core " << core_no << "j Instruction "
+                     << "\n";
+                lineN = a;
+            }
+        }
+        else
+        {
+            int b = blocks[word_1];
+            if (b == 0)
+            {
+                fout << "Core " << core_no << "Err : specified block not found at line " << lineN << "\n";
+                return;
+            }
+            else
+            {
+                fout << "Core " << core_no << "j Instruction"
+                     << "\n";
+                lineN = b;
+            }
+        }
+    }
 }
 
 int main(int argc, char **argv)
@@ -476,14 +573,14 @@ int main(int argc, char **argv)
     {
         cout << "Err : invalid value for row access delay" << endl;
         fout << "Err : invalid value for row access delay" << endl;
-        abort();
+        lineN = lineC + 1;
     }
 
     if (CAD < 0)
     {
         cout << "Err : invalid value for column access delay" << endl;
         fout << "Err : invalid value for column access delay" << endl;
-        abort();
+        lineN = lineC + 1;
     }
 
     fout << "Cores = " << NumCores << endl
