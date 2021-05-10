@@ -17,7 +17,9 @@ functions - lower_case
 using namespace std;
 ofstream fout("output.txt");
 
-int MainMemory[1048576];
+const int MMSize = 1048576;
+int MainMemory[MMSize];
+
 int RAD, CAD;
 int NumCores;
 int MaxCycles;
@@ -144,7 +146,65 @@ int hexToDec(string x)
     return temp;
 }
 
-void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[], string AssemblyLines[], map<string, int> blocks, map<int, int> addresses)
+void dramAccess(int &clockC, int core_no, bool read, string word1, string word2, int lineN, int &row_buffer, int RegisterFile[], int row_buffer_c, int base_address)
+{
+    if (stoi(word2) % 4 != 0)
+    {
+        cout << "Err : memory address unreachable at line " << lineN << endl;
+        fout << "Err : memory address unreachable at line " << lineN << endl;
+        abort();
+    }
+
+    int row_no = stoi(word2) / 1024;
+
+    if (row_buffer != row_no)
+    {
+        if (row_buffer >= 0)
+        {
+
+            fout << "\nCYCLE " << clockC + 1 << "-" << clockC + RAD + RAD + CAD << " Core " << core_no;
+            clockC += RAD;
+
+            clockC += RAD + CAD;
+
+            row_buffer = row_no;
+            row_buffer_c += 2;
+        }
+        else
+        {
+            fout << "\nCYCLE " << clockC + 1 << "-" << clockC + RAD + CAD << " Core " << core_no;
+            clockC += RAD + CAD;
+
+            row_buffer = row_no;
+            row_buffer_c += 1;
+        }
+    }
+    else
+    {
+        fout << "\nCYCLE " << clockC + 1 << "-" << clockC + CAD << " Core " << core_no;
+        clockC += CAD;
+    }
+
+    if (read)
+    {
+        //lw
+        int addr = stoi(word2);
+        fout << " " << word1 << " = " << MainMemory[addr + base_address] << "\n";
+
+        RegisterFile[getRegister(word1)] = MainMemory[addr + base_address];
+    }
+    else
+    {
+        //sw
+        int addr = stoi(word2);
+        int reg_val = RegisterFile[getRegister(word1)];
+        fout << " memory address " << addr << "-" << addr + 3 << " = " << reg_val << "\n";
+
+        MainMemory[addr + base_address] = reg_val;
+    }
+}
+
+void executer(int &clockC, int core_no, string line, int lineC, int &lineN, int RegisterFile[], string AssemblyLines[], map<string, int> blocks, map<int, int> addresses, int &row_buffer, int row_buffer_c, int base_address)
 {
 
     istringstream l(line);
@@ -548,6 +608,95 @@ void executer(int core_no, string line, int lineC, int &lineN, int RegisterFile[
             }
         }
     }
+
+    else if (f_word == "lw")
+    {
+
+        fout << "core " << core_no << ": "
+             << "DRAM request issued"
+             << "\n";
+
+        l >> word_1;
+        l >> word_2;
+        word_1 = word_1.substr(0, word_1.length() - 1);
+
+        if (word_2.at(0) == '$')
+        {
+            dramAccess(clockC, core_no, true, word_1, to_string(RegisterFile[getRegister(word_2)]), lineN, row_buffer, RegisterFile, row_buffer_c, base_address);
+        }
+        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+        {
+            if (word_2.find('$') != std::string::npos)
+            {
+                //word_2 is of the form 100($t1)
+                int c1 = word_2.find('(');
+                int c2 = word_2.find(')');
+                string offset = word_2.substr(0, c1);
+                string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+
+                int addr = RegisterFile[getRegister(reg)] + stoi(offset);
+                dramAccess(clockC, core_no, true, word_1, to_string(addr), lineN, row_buffer, RegisterFile, row_buffer_c, base_address);
+
+                //RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
+            }
+            else
+            {
+                dramAccess(clockC, core_no, true, word_1, word_2, lineN, row_buffer, RegisterFile, row_buffer_c, base_address);
+            }
+        }
+        else
+        {
+            cout << "Err : unsupported instruction at line " << lineN << endl;
+            fout << "Err : unsupported instruction at line " << lineN << endl;
+            abort();
+        }
+
+        lineN++;
+    }
+    else if (f_word == "sw")
+    {
+
+        fout << "core " << core_no << ": "
+             << "DRAM request issued"
+             << "\n";
+
+        l >> word_1;
+        l >> word_2;
+        word_1 = word_1.substr(0, word_1.length() - 1);
+
+        if (word_2.at(0) == '$')
+        {
+            dramAccess(clockC, core_no, false, word_1, to_string(RegisterFile[getRegister(word_2)]), lineN, row_buffer, RegisterFile, row_buffer_c, base_address);
+        }
+        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+        {
+            if (word_2.find('$') != std::string::npos)
+            {
+                //word_2 is of the form 100($t1)
+                int c1 = word_2.find('(');
+                int c2 = word_2.find(')');
+                string offset = word_2.substr(0, c1);
+                string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+
+                int addr = RegisterFile[getRegister(reg)] + stoi(offset);
+                dramAccess(clockC, core_no, false, word_1, to_string(addr), lineN, row_buffer, RegisterFile, row_buffer_c, base_address);
+
+                //RegisterFile[getRegister(word_1)] = MainMemory[RegisterFile[getRegister(reg)] + stoi(offset)];
+            }
+            else
+            {
+                dramAccess(clockC, core_no, false, word_1, word_2, lineN, row_buffer, RegisterFile, row_buffer_c, base_address);
+            }
+        }
+        else
+        {
+            cout << "Err : unsupported instruction at line " << lineN << endl;
+            fout << "Err : unsupported instruction at line " << lineN << endl;
+            abort();
+        }
+
+        lineN++;
+    }
 }
 
 int main(int argc, char **argv)
@@ -573,14 +722,14 @@ int main(int argc, char **argv)
     {
         cout << "Err : invalid value for row access delay" << endl;
         fout << "Err : invalid value for row access delay" << endl;
-        lineN = lineC + 1;
+        abort();
     }
 
     if (CAD < 0)
     {
         cout << "Err : invalid value for column access delay" << endl;
         fout << "Err : invalid value for column access delay" << endl;
-        lineN = lineC + 1;
+        abort();
     }
 
     fout << "Cores = " << NumCores << endl
@@ -588,6 +737,7 @@ int main(int argc, char **argv)
 
     fstream f_core[NumCores];
     Core cores[NumCores];
+    int memory_split = MMSize / NumCores;
     for (int i = 0; i < NumCores; i++)
     {
 
@@ -596,6 +746,7 @@ int main(int argc, char **argv)
             cout << "Could not open file \"" << argv[3 + i] << "\"" << endl;
         else
         {
+            cores[i].baseAddress = memory_split * i;
             string line;
             int addr = 0;
             while (getline(f_core[i], line))
@@ -645,8 +796,19 @@ int main(int argc, char **argv)
             if (cores[i].lineN <= cores[i].lineC)
             {
                 int x = cores[i].lineN;
-                executer(i + 1, cores[i].AssemblyLines[cores[i].lineN], cores[i].lineC, cores[i].lineN, cores[i].RegisterFile, cores[i].AssemblyLines, cores[i].blocks, cores[i].addresses);
-                cores[i].CompletedInstructions.push_back("Cycle " + to_string(MasterClock) + cores[i].AssemblyLines[x]);
+                int clock = MasterClock; // sent as reference to executer
+                executer(
+                    MasterClock,
+                    i + 1,
+                    cores[i].AssemblyLines[cores[i].lineN],
+                    cores[i].lineC, cores[i].lineN,
+                    cores[i].RegisterFile, cores[i].AssemblyLines,
+                    cores[i].blocks, cores[i].addresses,
+                    cores[i].rowBufferNumber,
+                    cores[i].rowBufferUpdates,
+                    cores[i].baseAddress);
+
+                cores[i].CompletedInstructions.push_back("Cycle " + to_string(clock) + cores[i].AssemblyLines[x]);
                 //cores[i].lineN++;
             }
         }
@@ -654,6 +816,7 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < NumCores; i++)
     {
+        cout << cores[i].baseAddress << endl;
         fout << "\nCORE " << i + 1 << endl;
         for (vector<string>::iterator t = cores[i].CompletedInstructions.begin(); t != cores[i].CompletedInstructions.end(); ++t)
         {

@@ -1,5 +1,5 @@
 main:
-    addi $t2 $zero, 2
+    addi $t2, $zero, 2
     addi $t1, $zero, 256
     mul $t2, $t2, $t2     
     bne $t2, $t1, 8   

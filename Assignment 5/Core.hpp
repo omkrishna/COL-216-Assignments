@@ -16,7 +16,10 @@ public:
     vector<string> CompletedInstructions;
     map<string, int> blocks;
     map<int, int> addresses;
-    int mainBlock; // stores line number of the main block
+    int mainBlock;        // stores line number of the main block
+    int baseAddress;      // stores the base address in memory, relative to which other addresses are calculated
+    int rowBufferNumber;  // stores the row buffer of the core
+    int rowBufferUpdates; // stores the number of row buffer updates
 
     Core()
     {
@@ -25,5 +28,8 @@ public:
 
         for (int i = 0; i < 32; i++)
             RegisterFile[i] = 0;
+
+        rowBufferNumber = -1;
+        rowBufferUpdates = 0;
     };
 };

@@ -2,9 +2,9 @@
 - print Cycle wise data - DONE
 - Print Core wise data at the end - DONE
 - add support for branch statements - DONE
-- and jump statements - DONE
+- jump statements - DONE
+- split memory across Cores - DONE
+- add support for lw and sw - with a cache/row_buffer for every core - DONE
 
-- split memory across Cores
-- add support for lw and sw
-- build memory request manager - either queue or have a row buffer for every Core
+- build memory request manager - handle lw/sw requests through the MRM; only one DRAM request at a time
 - reorder dram operations, with non blocking memory
