@@ -5,6 +5,7 @@
 - jump statements - DONE
 - split memory across Cores - DONE
 - add support for lw and sw - with a cache/row_buffer for every core - DONE
+- build memory request manager - handle lw/sw requests through the MRM; only one DRAM request at a time - DONE
+- fixed size queue inside the DRAM, drop requests if size increases - DONE
 
-- build memory request manager - handle lw/sw requests through the MRM; only one DRAM request at a time
-- reorder dram operations, with non blocking memory
+- reorder DRAM operations within a core
