@@ -3,6 +3,7 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <set>
 
 using namespace std;
 
@@ -20,6 +21,10 @@ public:
     int baseAddress;      // stores the base address in memory, relative to which other addresses are calculated
     int rowBufferNumber;  // stores the row buffer of the core
     int rowBufferUpdates; // stores the number of row buffer updates
+
+    set<int> skippedLines[1000];  // stores lines to be skipped
+    set<string> depRegisters[30]; // stores dependent registers
+    vector<string> depenReg;      // stores dependent registers
 
     Core()
     {
