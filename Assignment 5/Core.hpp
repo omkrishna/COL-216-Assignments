@@ -22,9 +22,10 @@ public:
     int rowBufferNumber;  // stores the row buffer of the core
     int rowBufferUpdates; // stores the number of row buffer updates
 
-    set<int> skippedLines[1000];  // stores lines to be skipped
-    set<string> depRegisters[30]; // stores dependent registers
-    vector<string> depenReg;      // stores dependent registers
+    set<int> skippedLines[1000];      // stores lines to be skipped while executing
+    set<string> reorderedLines[1000]; //stores lines that were skipped while reordering
+    set<string> depRegisters[30];     // stores dependent registers
+    vector<string> depenReg;          // stores dependent registers
 
     Core()
     {

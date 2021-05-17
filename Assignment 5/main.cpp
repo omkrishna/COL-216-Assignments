@@ -110,6 +110,15 @@ int getRegister(string s)
     return -1;
 }
 
+void printRegisterFile(int RegisterFile[])
+{
+    for (int i = 0; i < 32; i++)
+    {
+        fout << "$" << i << "=" << RegisterFile[i] << " ";
+    }
+    fout << endl;
+}
+
 void decToHex(int x)
 {
     char hex[100];
@@ -168,11 +177,14 @@ void printDepenReg(vector<string> s)
 
 void dram(Core cores[])
 {
-
     if (DRAMQueue.size() > 0 && DRAMQcores.size() > 0)
     {
         string line = DRAMQueue.front();
         int core_no = DRAMQcores.front();
+
+        string reg1, reg2;
+
+        //cout << core_no << ", " << line << endl;
 
         istringstream l(line);
         string f_word, word_1, word_2, word_3;
@@ -186,11 +198,13 @@ void dram(Core cores[])
         l >> word_1;
         l >> word_2;
         word_1 = word_1.substr(0, word_1.length() - 1);
+        reg1 = word_1;
 
         // address calculation from word_2
         if (word_2.at(0) == '$')
         {
             word_3 = to_string(cores[core_no].RegisterFile[getRegister(word_2)]);
+            reg2 = word_2;
         }
         else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
         {
@@ -205,6 +219,8 @@ void dram(Core cores[])
                 int addr = cores[core_no].RegisterFile[getRegister(reg)] + stoi(offset);
 
                 word_3 = to_string(addr);
+
+                reg2 = reg;
             }
             else
             {
@@ -285,6 +301,18 @@ void dram(Core cores[])
 
         //cout << cores[core_no].baseAddress << "," << word_1 << "," << word_3 << endl;
 
+        std::vector<string>::iterator pos = std::find(cores[core_no].depenReg.begin(), cores[core_no].depenReg.end(), reg1);
+        if (pos != cores[core_no].depenReg.end()) // == cores[core_no].depenReg.end() means the element was not found
+            cores[core_no].depenReg.erase(pos);
+
+        std::vector<string>::iterator position = std::find(cores[core_no].depenReg.begin(), cores[core_no].depenReg.end(), reg2);
+        if (position != cores[core_no].depenReg.end()) // == cores[core_no].depenReg.end() means the element was not found
+            cores[core_no].depenReg.erase(position);
+
+        //cores[core_no].depenReg.erase(std::remove(cores[core_no].depenReg.begin(), cores[core_no].depenReg.end(), reg1), cores[core_no].depenReg.end());
+        //cores[core_no].depenReg.erase(std::remove(cores[core_no].depenReg.begin(), cores[core_no].depenReg.end(), reg2), cores[core_no].depenReg.end());
+
+        /*
         if (read)
         {
 
@@ -301,6 +329,7 @@ void dram(Core cores[])
             cores[core_no].depenReg.erase(cores[core_no].depenReg.begin());
             cores[core_no].depenReg.erase(cores[core_no].depenReg.begin());
         }
+        */
 
         DRAMQueue.pop();
         DRAMQcores.pop();
@@ -313,61 +342,64 @@ void MRM(int core_no, string line, Core cores[])
          << "MRM requested"
          << "\n";
 
-    istringstream l(line);
-    string f_word, word_1, word_2, word_3;
-    l >> f_word;
-    l >> word_1;
-    l >> word_2;
-    if (f_word == "lw")
+    if (cores[core_no].reorderedLines->find(line) == cores[core_no].reorderedLines->end())
     {
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        cores[core_no].depenReg.push_back(word_1);
-        if (word_2.at(0) == '$')
+        istringstream l(line);
+        string f_word, word_1, word_2, word_3;
+        l >> f_word;
+        l >> word_1;
+        l >> word_2;
+        if (f_word == "lw")
         {
-
-            cores[core_no].depenReg.push_back(word_2);
-        }
-        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
-        {
-            if (word_2.find('$') != std::string::npos)
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            cores[core_no].depenReg.push_back(word_1);
+            if (word_2.at(0) == '$')
             {
-                //word_2 is of the form 100($t1)
-                int c1 = word_2.find('(');
-                int c2 = word_2.find(')');
-                string offset = word_2.substr(0, c1);
-                string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+                cores[core_no].depenReg.push_back(word_2);
+            }
+            else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+            {
+                if (word_2.find('$') != std::string::npos)
+                {
+                    //word_2 is of the form 100($t1)
+                    int c1 = word_2.find('(');
+                    int c2 = word_2.find(')');
+                    string offset = word_2.substr(0, c1);
+                    string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
 
-                cores[core_no].depenReg.push_back(reg);
+                    cores[core_no].depenReg.push_back(reg);
+                }
             }
         }
-    }
-    else if (f_word == "sw")
-    {
-        word_1 = word_1.substr(0, word_1.length() - 1);
-
-        cores[core_no].depenReg.push_back(word_1);
-        if (word_2.at(0) == '$')
+        else if (f_word == "sw")
         {
+            word_1 = word_1.substr(0, word_1.length() - 1);
 
-            cores[core_no].depenReg.push_back(word_2);
-        }
-        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
-        {
-            if (word_2.find('$') != std::string::npos)
+            cores[core_no].depenReg.push_back(word_1);
+            if (word_2.at(0) == '$')
             {
-                //word_2 is of the form 100($t1)
-                int c1 = word_2.find('(');
-                int c2 = word_2.find(')');
-                string offset = word_2.substr(0, c1);
-                string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
 
-                cores[core_no].depenReg.push_back(reg);
+                cores[core_no].depenReg.push_back(word_2);
+            }
+            else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+            {
+                if (word_2.find('$') != std::string::npos)
+                {
+                    //word_2 is of the form 100($t1)
+                    int c1 = word_2.find('(');
+                    int c2 = word_2.find(')');
+                    string offset = word_2.substr(0, c1);
+                    string reg = word_2.substr(c1 + 1, c2 - c1 - 1);
+
+                    cores[core_no].depenReg.push_back(reg);
+                }
             }
         }
     }
 
     if (DRAMQueue.size() <= 32) // finite size DRAM Queue; further requests are dropped
     {
+        //cout << "Adding to DRAM --- " << line << endl;
         DRAMQueue.push(line);
         DRAMQcores.push(core_no);
     }
@@ -394,506 +426,696 @@ bool checkDependency(vector<string> s1, string s2)
     return false;
 }
 
-void executer(int core_no, string line, Core cores[])
+int getRowNumber(string addr, int lineN, int core_no, Core cores[])
+{
+    int a;
+    if (addr.at(0) == '$')
+        a = cores[core_no].RegisterFile[getRegister(addr)];
+    else if (addr.at(0) == '(')
+    {
+        string reg = addr.substr(1, addr.find(')') - 1);
+        a = cores[core_no].RegisterFile[getRegister(reg)];
+    }
+    else if (addr.at(0) >= 48 && addr.at(0) <= 57)
+    {
+        if (addr.find('$') != std::string::npos)
+        {
+            // addr is of the form 100($t1)
+            int c1 = addr.find('(');
+            int c2 = addr.find(')');
+            string offset = addr.substr(0, c1);
+            string reg = addr.substr(c1 + 1, c2 - c1 - 1);
+
+            a = cores[core_no].RegisterFile[getRegister(reg)] + stoi(offset);
+        }
+        else
+        {
+            a = stoi(addr);
+        }
+    }
+    else
+    {
+        cout << "Err : unsupported instruction at line " << lineN << endl;
+        fout << "Err : unsupported instruction at line " << lineN << endl;
+        return -1;
+    }
+    return a / 1024;
+}
+
+void executer(int core_no, string line, Core cores[], bool toIncre);
+
+void reorderingInstructions(int lineN, Core cores[], int core_no)
+{
+    if (cores[core_no].skippedLines->find(lineN) != cores[core_no].skippedLines->end())
+    {
+        reorderingInstructions(lineN + 1, cores, core_no);
+    }
+    else
+    {
+        for (int i = lineN; i <= cores[core_no].lineC; i++)
+        {
+            //cout << i << "," << cores[core_no].AssemblyLines[i] << endl;
+            string f_word;
+            istringstream l(cores[core_no].AssemblyLines[i]);
+            l >> f_word;
+
+            //cout << "Exe line" << cores[core_no].AssemblyLines[i] << endl;
+            if (f_word == "")
+                continue;
+            if (f_word == "sw" || f_word == "lw")
+            {
+                string word1, word2;
+                l >> word1;
+                l >> word2;
+                string x;
+
+                if (getRowNumber(word2, i, core_no, cores) == cores[core_no].rowBufferNumber)
+                {
+                    //cout << i << " should be executed" << endl;
+                    if (MasterClock < MaxCycles)
+                    {
+                        dram(cores);
+                        MasterClock++;
+                        fout << "\nCYCLE " << MasterClock << endl;
+
+                        for (int j = 0; j < NumCores; j++)
+                        {
+                            if (j == core_no)
+                            {
+                                executer(core_no, cores[core_no].AssemblyLines[i], cores, false);
+                                cores[core_no].skippedLines->insert(i);
+                                cores[j].CompletedInstructions.push_back("Cycle " + to_string(MasterClock) + cores[j].AssemblyLines[i]);
+                            }
+                            else if (cores[j].lineN <= cores[j].lineC)
+                            {
+                                //cout << "checking line" << cores[i].lineN << endl;
+                                int x = cores[j].lineN;
+                                int clock = MasterClock; // sent as reference to executer
+                                executer(j, cores[j].AssemblyLines[cores[j].lineN], cores, true);
+                                cores[j].CompletedInstructions.push_back("Cycle " + to_string(clock) + cores[j].AssemblyLines[x]);
+                                //cores[i].lineN++;
+                            }
+                        }
+
+                        //dram(cores);
+                    }
+                }
+                else
+                {
+                    cores[core_no].reorderedLines->insert(cores[core_no].AssemblyLines[i]);
+                    word1 = word1.substr(0, word1.length() - 1);
+                    cores[core_no].depenReg.push_back(word1);
+                    if (word2.at(0) == '$')
+                    {
+                        cores[core_no].depenReg.push_back(word2);
+                    }
+                    else if (word2.at(0) >= 48 && word2.at(0) <= 57)
+                    {
+                        if (word2.find('$') != std::string::npos)
+                        {
+                            //word2 is of the form 100($t1)
+                            int c1 = word2.find('(');
+                            int c2 = word2.find(')');
+                            string offset = word2.substr(0, c1);
+                            string reg = word2.substr(c1 + 1, c2 - c1 - 1);
+
+                            cores[core_no].depenReg.push_back(reg);
+                        }
+                    }
+                }
+                //cout << word1.substr(0, word1.length() - 1) << "," << word2 << endl;
+            }
+
+            else
+            {
+                string word1, word2, word3;
+                l >> word1;
+                //cout << word1 << endl;
+
+                if (checkDependency(cores[core_no].depenReg, word1.substr(0, word1.length() - 1)))
+                {
+                    //cout << cores[core_no].AssemblyLines[i] << "-----------";
+                    //printDepenReg(cores[core_no].depenReg);
+                    return;
+                }
+                if (MasterClock < MaxCycles)
+                {
+                    dram(cores);
+                    MasterClock++;
+                    fout << "\nCYCLE " << MasterClock << endl;
+
+                    for (int j = 0; j < NumCores; j++)
+                    {
+                        if (j == core_no)
+                        {
+                            if (cores[core_no].skippedLines->find(i) == cores[core_no].skippedLines->end())
+                            {
+                                executer(core_no, cores[core_no].AssemblyLines[i], cores, false);
+                                cores[core_no].skippedLines->insert(i);
+                                cores[j].CompletedInstructions.push_back("Cycle " + to_string(MasterClock) + cores[j].AssemblyLines[i]);
+                            }
+                        }
+                        else if (cores[j].lineN <= cores[j].lineC)
+                        {
+                            //cout << "checking line" << cores[i].lineN << endl;
+                            int x = cores[j].lineN;
+                            int clock = MasterClock; // sent as reference to executer
+                            executer(j, cores[j].AssemblyLines[cores[j].lineN], cores, true);
+                            cores[j].CompletedInstructions.push_back("Cycle " + to_string(clock) + cores[j].AssemblyLines[x]);
+                            //cores[i].lineN++;
+                        }
+                    }
+                    //dram(cores);
+                }
+            }
+        }
+    }
+}
+
+void executer(int core_no, string line, Core cores[], bool toIncre)
 {
 
-    istringstream l(line);
-    string f_word, word_1, word_2, word_3;
-    l >> f_word;
-
-    if (f_word == "add")
+    if (cores[core_no].skippedLines->find(cores[core_no].lineN) != cores[core_no].skippedLines->end())
     {
-
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
-
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-        if (word_1 == "$zero" || word_1 == "$0")
-        {
-            fout << "Core " << core_no + 1 << "Err : Zero register cannot be modified" << endl;
-            cout << "Err : Zero register cannot be modified" << endl;
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-        }
-
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
-        {
-            return;
-        }
-        //cout << checkDependency(cores[core_no].depenReg, word_1) << endl;
-        cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] + cores[core_no].RegisterFile[getRegister(word_3)];
-
-        fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
-             << "\n";
-
         cores[core_no].lineN++;
-
-        //printRegisterFile();
+        //executer(core_no, cores[core_no].AssemblyLines[cores[core_no].lineN], cores, toIncre);
     }
-
-    else if (f_word == "sub")
+    else
     {
+        istringstream l(line);
+        string f_word, word_1, word_2, word_3;
+        l >> f_word;
 
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
+        if (f_word == "add")
+        {
 
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
 
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-        if (word_1 == "$zero" || word_1 == "$0")
-        {
-            fout << "Err : Zero register cannot be modified" << endl;
-            cout << "Err : Zero register cannot be modified" << endl;
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-        }
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
-        {
-            return;
-        }
-        cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] - cores[core_no].RegisterFile[getRegister(word_3)];
-        fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
-             << "\n";
-        //printRegisterFile();
-        cores[core_no].lineN++;
-    }
-
-    else if (f_word == "mul")
-    {
-
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
-
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-        if (word_1 == "$zero" || word_1 == "$0")
-        {
-            fout << "Err : Zero register cannot be modified" << endl;
-            cout << "Err : Zero register cannot be modified" << endl;
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-        }
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
-        {
-            return;
-        }
-        cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] * cores[core_no].RegisterFile[getRegister(word_3)];
-
-        fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
-             << "\n";
-        cores[core_no].lineN++;
-    }
-
-    else if (f_word == "addi")
-    {
-
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
-
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-            return;
-        }
-
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-        if (word_1 == "$zero" || word_1 == "$0")
-        {
-            fout << "Err : Zero register cannot be modified" << endl;
-            cout << "Err : Zero register cannot be modified" << endl;
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-        }
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2))
-        {
-            return;
-        }
-        if (word_3.substr(0, 2) != "0x")
-        {
-            cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] + stoi(word_3);
-        }
-        else
-        {
-            word_3 = word_3.substr(2, word_3.length());
-            cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] + hexToDec(word_3);
-        }
-        fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
-             << "\n";
-        cores[core_no].lineN++;
-    }
-
-    else if (f_word == "beq")
-    {
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
-
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
-        {
-            return;
-        }
-
-        //beq $, $, int
-        if (cores[core_no].RegisterFile[getRegister(word_1)] == cores[core_no].RegisterFile[getRegister(word_2)])
-        {
-            //printRegisterFile();
-
-            if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
+            if (word_1.at(word_1.length() - 1) != ',')
             {
-                int addr = stoi(word_3);
-                int a = cores[core_no].addresses[addr];
-                if (addr % 4 != 0 || a == 0)
-                {
-                    fout << "Core " << core_no + 1 << "Err : invalid jump address at line " << cores[core_no].lineN << "\n";
-                    return;
-                }
-                else
-                {
-                    fout << "Core " << core_no + 1 << " Beq Instruction"
-                         << "\n";
-                    cores[core_no].lineN = a;
-                }
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
             }
-            else
+            if (word_2.at(word_2.length() - 1) != ',')
             {
-                int r = cores[core_no].blocks[word_3];
-                if (r == 0)
-                {
-                    fout << "Core " << core_no + 1 << "Err : specified block not found at line " << cores[core_no].lineN << "\n";
-                    return;
-                }
-                else
-                {
-                    fout << "Core " << core_no + 1 << " Beq Instruction"
-                         << "\n";
-                    cores[core_no].lineN = r;
-                }
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
             }
-        }
-        else
-        {
-            fout << "Core " << core_no + 1 << " Beq Instruction Failed"
-                 << "\n";
-            cores[core_no].lineN++;
-        }
-    }
-
-    else if (f_word == "bne")
-    {
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
-
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
-        {
-            return;
-        }
-
-        //beq $, $, int
-        if (cores[core_no].RegisterFile[getRegister(word_1)] != cores[core_no].RegisterFile[getRegister(word_2)])
-        {
-            //printRegisterFile();
-
-            if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
+            if (word_3.at(word_3.length() - 1) == ',')
             {
-                int addr = stoi(word_3);
-                int a = cores[core_no].addresses[addr];
-                if (addr % 4 != 0 || a == 0)
-                {
-                    fout << "Core " << core_no + 1 << "Err : invalid jump address at line " << cores[core_no].lineN << "\n";
-                    return;
-                }
-                else
-                {
-                    fout << "Core " << core_no + 1 << " Bne Instruction"
-                         << "\n";
-                    cores[core_no].lineN = a;
-                }
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
             }
-            else
-            {
-                int r = cores[core_no].blocks[word_3];
-                if (r == 0)
-                {
-                    fout << "Core " << core_no + 1 << "Err : specified block not found at line " << cores[core_no].lineN << "\n";
-                    return;
-                }
-                else
-                {
-                    fout << "Core " << core_no + 1 << " Bne Instruction"
-                         << "\n";
-                    cores[core_no].lineN = r;
-                }
-            }
-        }
-        else
-        {
-            fout << "Core " << core_no + 1 << " Bne Instruction Failed"
-                 << "\n";
-            cores[core_no].lineN++;
-        }
-    }
 
-    else if (f_word == "slt")
-    {
-        l >> word_1;
-        l >> word_2;
-        l >> word_3;
-
-        if (word_1.at(word_1.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-        if (word_2.at(word_2.length() - 1) != ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-        if (word_3.at(word_3.length() - 1) == ',')
-        {
-            fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
-            return;
-        }
-
-        word_1 = word_1.substr(0, word_1.length() - 1);
-        word_2 = word_2.substr(0, word_2.length() - 1);
-
-        if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
-        {
-            return;
-        }
-
-        //slt $, $, $
-        if (cores[core_no].RegisterFile[getRegister(word_2)] < cores[core_no].RegisterFile[getRegister(word_3)])
-        {
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
             if (word_1 == "$zero" || word_1 == "$0")
             {
                 fout << "Core " << core_no + 1 << "Err : Zero register cannot be modified" << endl;
-                cout << "Core " << core_no << "Err : Zero register cannot be modified" << endl;
+                cout << "Err : Zero register cannot be modified" << endl;
                 cores[core_no].lineN = cores[core_no].lineC + 1;
             }
-            cores[core_no].RegisterFile[getRegister(word_1)] = 1;
-        }
 
-        else
-            cores[core_no].RegisterFile[getRegister(word_1)] = 0;
-
-        fout << "Core " << core_no + 1 << "Slt Instruction at address "
-             << "\n";
-
-        cores[core_no].lineN++;
-    }
-
-    else if (f_word == "j")
-    {
-        l >> word_1;
-
-        if (word_1[0] >= 48 && word_1[0] <= 57)
-        {
-            int addr = stoi(word_1);
-            int a = cores[core_no].addresses[addr];
-            if (addr % 4 != 0 || a == 0)
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
             {
-                fout << "Core " << core_no + 1 << "Err : invalid jump address at line " << cores[core_no].lineN << "\n";
                 return;
             }
-            else
-            {
-                fout << "Core " << core_no + 1 << "j Instruction "
-                     << "\n";
-                cores[core_no].lineN = a;
-            }
+            //cout << checkDependency(cores[core_no].depenReg, word_1) << endl;
+            cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] + cores[core_no].RegisterFile[getRegister(word_3)];
+
+            fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
+                 << "\n";
+
+            if (toIncre)
+                cores[core_no].lineN++;
+
+            //printRegisterFile();
         }
-        else
+
+        else if (f_word == "sub")
         {
-            int b = cores[core_no].blocks[word_1];
-            if (b == 0)
+
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
+
+            if (word_1.at(word_1.length() - 1) != ',')
             {
-                fout << "Core " << core_no + 1 << "Err : specified block not found at line " << cores[core_no].lineN << "\n";
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
                 return;
             }
+            if (word_2.at(word_2.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+            if (word_3.at(word_3.length() - 1) == ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
+            if (word_1 == "$zero" || word_1 == "$0")
+            {
+                fout << "Err : Zero register cannot be modified" << endl;
+                cout << "Err : Zero register cannot be modified" << endl;
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+            }
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
+            {
+                return;
+            }
+            cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] - cores[core_no].RegisterFile[getRegister(word_3)];
+            fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
+                 << "\n";
+            //printRegisterFile();
+            if (toIncre)
+                cores[core_no].lineN++;
+        }
+
+        else if (f_word == "mul")
+        {
+
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
+
+            if (word_1.at(word_1.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+            if (word_2.at(word_2.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+            if (word_3.at(word_3.length() - 1) == ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
+            if (word_1 == "$zero" || word_1 == "$0")
+            {
+                fout << "Err : Zero register cannot be modified" << endl;
+                cout << "Err : Zero register cannot be modified" << endl;
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+            }
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
+            {
+                return;
+            }
+            cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] * cores[core_no].RegisterFile[getRegister(word_3)];
+
+            fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
+                 << "\n";
+            if (toIncre)
+                cores[core_no].lineN++;
+        }
+
+        else if (f_word == "addi")
+        {
+
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
+
+            if (word_1.at(word_1.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+            if (word_2.at(word_2.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+            if (word_3.at(word_3.length() - 1) == ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+                return;
+            }
+
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
+            if (word_1 == "$zero" || word_1 == "$0")
+            {
+                fout << "Err : Zero register cannot be modified" << endl;
+                cout << "Err : Zero register cannot be modified" << endl;
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+            }
+            //printDepenReg(cores[core_no].depenReg);
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2))
+            {
+                return;
+            }
+            if (word_3.substr(0, 2) != "0x")
+            {
+                cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] + stoi(word_3);
+            }
             else
             {
-                fout << "Core " << core_no + 1 << "j Instruction"
+                word_3 = word_3.substr(2, word_3.length());
+                cores[core_no].RegisterFile[getRegister(word_1)] = cores[core_no].RegisterFile[getRegister(word_2)] + hexToDec(word_3);
+            }
+            fout << "Core " << core_no + 1 << ": " << word_1 << "=" << cores[core_no].RegisterFile[getRegister(word_1)]
+                 << "\n";
+            if (toIncre)
+                cores[core_no].lineN++;
+        }
+
+        else if (f_word == "beq")
+        {
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
+
+            if (word_1.at(word_1.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+            if (word_2.at(word_2.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+            if (word_3.at(word_3.length() - 1) == ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
+
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
+            {
+                return;
+            }
+
+            //beq $, $, int
+            if (cores[core_no].RegisterFile[getRegister(word_1)] == cores[core_no].RegisterFile[getRegister(word_2)])
+            {
+                //printRegisterFile();
+
+                if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
+                {
+                    int addr = stoi(word_3);
+                    int a = cores[core_no].addresses[addr];
+                    if (addr % 4 != 0 || a == 0)
+                    {
+                        fout << "Core " << core_no + 1 << "Err : invalid jump address at line " << cores[core_no].lineN << "\n";
+                        return;
+                    }
+                    else
+                    {
+                        fout << "Core " << core_no + 1 << " Beq Instruction"
+                             << "\n";
+                        cores[core_no].lineN = a;
+                    }
+                }
+                else
+                {
+                    int r = cores[core_no].blocks[word_3];
+                    if (r == 0)
+                    {
+                        fout << "Core " << core_no + 1 << "Err : specified block not found at line " << cores[core_no].lineN << "\n";
+                        return;
+                    }
+                    else
+                    {
+                        fout << "Core " << core_no + 1 << " Beq Instruction"
+                             << "\n";
+                        cores[core_no].lineN = r;
+                    }
+                }
+            }
+            else
+            {
+                fout << "Core " << core_no + 1 << " Beq Instruction Failed"
                      << "\n";
-                cores[core_no].lineN = b;
+                if (toIncre)
+                    cores[core_no].lineN++;
             }
         }
-    }
 
-    else if (f_word == "lw")
-    {
-
-        l >> word_1;
-        l >> word_2;
-        word_1 = word_1.substr(0, word_1.length() - 1);
-
-        if (word_2.at(0) == '$')
+        else if (f_word == "bne")
         {
-            MRM(core_no, line, cores);
-        }
-        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
-        {
-            if (word_2.find('$') != std::string::npos)
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
+
+            if (word_1.at(word_1.length() - 1) != ',')
             {
-                MRM(core_no, line, cores);
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+            if (word_2.at(word_2.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+            if (word_3.at(word_3.length() - 1) == ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
+
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
+            {
+                return;
+            }
+
+            //beq $, $, int
+            if (cores[core_no].RegisterFile[getRegister(word_1)] != cores[core_no].RegisterFile[getRegister(word_2)])
+            {
+                //printRegisterFile();
+
+                if (word_3.at(0) >= 48 && word_3.at(0) <= 57)
+                {
+                    int addr = stoi(word_3);
+                    int a = cores[core_no].addresses[addr];
+                    if (addr % 4 != 0 || a == 0)
+                    {
+                        fout << "Core " << core_no + 1 << "Err : invalid jump address at line " << cores[core_no].lineN << "\n";
+                        return;
+                    }
+                    else
+                    {
+                        fout << "Core " << core_no + 1 << " Bne Instruction"
+                             << "\n";
+                        cores[core_no].lineN = a;
+                    }
+                }
+                else
+                {
+                    int r = cores[core_no].blocks[word_3];
+                    if (r == 0)
+                    {
+                        fout << "Core " << core_no + 1 << "Err : specified block not found at line " << cores[core_no].lineN << "\n";
+                        return;
+                    }
+                    else
+                    {
+                        fout << "Core " << core_no + 1 << " Bne Instruction"
+                             << "\n";
+                        cores[core_no].lineN = r;
+                    }
+                }
             }
             else
             {
-                MRM(core_no, line, cores);
+                fout << "Core " << core_no + 1 << " Bne Instruction Failed"
+                     << "\n";
+                if (toIncre)
+                    cores[core_no].lineN++;
             }
         }
-        else
+
+        else if (f_word == "slt")
         {
-            cout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
-            fout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
-            cores[core_no].lineN = cores[core_no].lineC + 1;
-        }
+            l >> word_1;
+            l >> word_2;
+            l >> word_3;
 
-        cores[core_no].lineN++;
-    }
-
-    else if (f_word == "sw")
-    {
-
-        l >> word_1;
-        l >> word_2;
-        word_1 = word_1.substr(0, word_1.length() - 1);
-
-        if (word_2.at(0) == '$')
-        {
-            MRM(core_no, line, cores);
-        }
-        else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
-        {
-            if (word_2.find('$') != std::string::npos)
+            if (word_1.at(word_1.length() - 1) != ',')
             {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+            if (word_2.at(word_2.length() - 1) != ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : missing , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
+            if (word_3.at(word_3.length() - 1) == ',')
+            {
+                fout << "Core " << core_no + 1 << "Err : too many , on line " << cores[core_no].lineN << "\n";
+                return;
+            }
 
-                MRM(core_no, line, cores);
+            word_1 = word_1.substr(0, word_1.length() - 1);
+            word_2 = word_2.substr(0, word_2.length() - 1);
+
+            if (checkDependency(cores[core_no].depenReg, word_1) || checkDependency(cores[core_no].depenReg, word_2) || checkDependency(cores[core_no].depenReg, word_3))
+            {
+                return;
+            }
+
+            //slt $, $, $
+            if (cores[core_no].RegisterFile[getRegister(word_2)] < cores[core_no].RegisterFile[getRegister(word_3)])
+            {
+                if (word_1 == "$zero" || word_1 == "$0")
+                {
+                    fout << "Core " << core_no + 1 << "Err : Zero register cannot be modified" << endl;
+                    cout << "Core " << core_no << "Err : Zero register cannot be modified" << endl;
+                    cores[core_no].lineN = cores[core_no].lineC + 1;
+                }
+                cores[core_no].RegisterFile[getRegister(word_1)] = 1;
+            }
+
+            else
+                cores[core_no].RegisterFile[getRegister(word_1)] = 0;
+
+            fout << "Core " << core_no + 1 << "Slt Instruction at address "
+                 << "\n";
+
+            if (toIncre)
+                cores[core_no].lineN++;
+        }
+
+        else if (f_word == "j")
+        {
+            l >> word_1;
+
+            if (word_1[0] >= 48 && word_1[0] <= 57)
+            {
+                int addr = stoi(word_1);
+                int a = cores[core_no].addresses[addr];
+                if (addr % 4 != 0 || a == 0)
+                {
+                    fout << "Core " << core_no + 1 << "Err : invalid jump address at line " << cores[core_no].lineN << "\n";
+                    return;
+                }
+                else
+                {
+                    fout << "Core " << core_no + 1 << "j Instruction "
+                         << "\n";
+                    cores[core_no].lineN = a;
+                }
             }
             else
             {
-                MRM(core_no, line, cores);
+                int b = cores[core_no].blocks[word_1];
+                if (b == 0)
+                {
+                    fout << "Core " << core_no + 1 << "Err : specified block not found at line " << cores[core_no].lineN << "\n";
+                    return;
+                }
+                else
+                {
+                    fout << "Core " << core_no + 1 << "j Instruction"
+                         << "\n";
+                    cores[core_no].lineN = b;
+                }
             }
         }
-        else
+
+        else if (f_word == "lw")
         {
-            cout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
-            fout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
-            cores[core_no].lineN = cores[core_no].lineC + 1;
+            l >> word_1;
+            l >> word_2;
+            word_1 = word_1.substr(0, word_1.length() - 1);
+
+            if (word_2.at(0) == '$')
+            {
+                MRM(core_no, line, cores);
+            }
+            else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+            {
+                if (word_2.find('$') != std::string::npos)
+                {
+                    MRM(core_no, line, cores);
+                }
+                else
+                {
+                    MRM(core_no, line, cores);
+                }
+            }
+            else
+            {
+                cout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
+                fout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+            }
+
+            if (toIncre)
+            {
+                if (cores[core_no].skippedLines->find(cores[core_no].lineN + 1) == cores[core_no].skippedLines->end())
+                    reorderingInstructions(cores[core_no].lineN + 1, cores, core_no);
+                cores[core_no].lineN++;
+            }
         }
 
-        cores[core_no].lineN++;
+        else if (f_word == "sw")
+        {
+
+            l >> word_1;
+            l >> word_2;
+            word_1 = word_1.substr(0, word_1.length() - 1);
+
+            if (word_2.at(0) == '$')
+            {
+                MRM(core_no, line, cores);
+            }
+            else if (word_2.at(0) >= 48 && word_2.at(0) <= 57)
+            {
+                if (word_2.find('$') != std::string::npos)
+                {
+
+                    MRM(core_no, line, cores);
+                }
+                else
+                {
+                    MRM(core_no, line, cores);
+                }
+            }
+            else
+            {
+                cout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
+                fout << "Err : unsupported instruction at line " << cores[core_no].lineN << endl;
+                cores[core_no].lineN = cores[core_no].lineC + 1;
+            }
+
+            if (toIncre)
+            {
+                reorderingInstructions(cores[core_no].lineN + 1, cores, core_no);
+                cores[core_no].lineN++;
+            }
+        }
     }
 }
 
@@ -997,12 +1219,11 @@ int main(int argc, char **argv)
                 //cout << "checking line" << cores[i].lineN << endl;
                 int x = cores[i].lineN;
                 int clock = MasterClock; // sent as reference to executer
-                executer(
-                    i,
-                    cores[i].AssemblyLines[cores[i].lineN],
-                    cores);
+
+                executer(i, cores[i].AssemblyLines[cores[i].lineN], cores, true);
 
                 cores[i].CompletedInstructions.push_back("Cycle " + to_string(clock) + cores[i].AssemblyLines[x]);
+
                 //cores[i].lineN++;
             }
         }
@@ -1014,10 +1235,16 @@ int main(int argc, char **argv)
         //cout << cores[i].baseAddress << endl;
 
         fout << "\nCORE " << i + 1 << endl;
+
+        /*
         for (vector<string>::iterator t = cores[i].CompletedInstructions.begin(); t != cores[i].CompletedInstructions.end(); ++t)
         {
             fout << *t << endl;
         }
+        */
+
+        printRegisterFile(cores[i].RegisterFile);
+        fout << "Row Buffer Updates = " << cores[i].rowBufferUpdates << endl;
 
         f_core[i].close();
     }
