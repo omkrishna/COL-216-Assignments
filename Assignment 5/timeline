@@ -7,5 +7,13 @@
 - add support for lw and sw - with a cache/row_buffer for every core - DONE
 - build memory request manager - handle lw/sw requests through the MRM; only one DRAM request at a time - DONE
 - fixed size queue inside the DRAM, drop requests if size increases - DONE
+- reorder DRAM operations within a core - DONE
+- delay because of MRM - DONE
 
-- reorder DRAM operations within a core
+
+DRAM Request Manager for MultiCore Processors
+
+Approach
+Our basic approach was to create a class called Core and use instantiate its objects based on the the inputs. Each Core has its own 32-bit Register File with 32 registers, a base address in memory, a row buffer and other pieces of hardware. The entire main memory was spilt among the cores, with each core having a base address relative to which its instructions were executed. Each core has the hardware attached to independently execute instructions like add, sub, mul, addi, slt, beq, bne and j. All cores run parallely and independently. 
+Given the constraint of a shared single DRAM across all the cores, the lw and sw instructions are handled by a new piece of hardware - the memory request manager. The MRM executes memory instructions by inserting them in a DRAM Queue, of fixed size(32). Extra requests are dropped. To increase the throughput, each core maintains its own row buffer. Furthermore, within a core, instructions are reordered keeping in mind the dependent registers, to maximize the effieciency.
+MRM Delay - The memory request manager takes a delay of 2 cycles every time it is invoked. This is because it has to first note the dependent registers used by the instructions and then push the instruction to the DRAM Queue. 

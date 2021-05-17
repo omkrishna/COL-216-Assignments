@@ -341,6 +341,8 @@ void MRM(int core_no, string line, Core cores[])
     fout << "core " << core_no + 1 << ": "
          << "MRM requested"
          << "\n";
+    fout << "\nCYCLE " << MasterClock + 1 << "-" << MasterClock + 2 << " Memory Request Manager Delay" << endl;
+    MasterClock += 2;
 
     if (cores[core_no].reorderedLines->find(line) == cores[core_no].reorderedLines->end())
     {
